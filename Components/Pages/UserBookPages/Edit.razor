@@ -79,12 +79,14 @@ else
                 </div>
 
                 <button type="submit" class="btn btn-primary">Update</button>
+                <button @onclick="DeleteUserBook" class="btn btn-danger">Delete</button>
             </EditForm>
         </div>
     </div>
 }
 
 <div>
+    <a href="@((UserBook is not null ? $"/userbooks/details?id={UserBook.Id}" : "#"))">View Details</a>
     <a href="/userbooks">Back to List</a>
 </div>
 
@@ -137,5 +139,20 @@ else
     {
         using var context = DbFactory.CreateDbContext();
         return context.UserBooks.Any(e => e.Id == id);
+    }
+
+    private async Task DeleteUserBook()
+    {
+        if (UserBook is null)
+            return;
+
+        using var context = DbFactory.CreateDbContext();
+        var entity = await context.UserBooks.FindAsync(UserBook.Id);
+        if (entity != null)
+        {
+            context.UserBooks.Remove(entity);
+            await context.SaveChangesAsync();
+        }
+        NavigationManager.NavigateTo("/userbooks");
     }
 }

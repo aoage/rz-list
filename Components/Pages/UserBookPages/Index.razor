@@ -15,8 +15,16 @@
 </p>
 
 <QuickGrid Class="table" Items="context.UserBooks">
-    <PropertyColumn Property="userbook => userbook.User.Username" Title="Username" />
-    <PropertyColumn Property="userbook => userbook.Book.Title" Title="Book Title" />
+    <TemplateColumn Title="Username" Context="userbook">
+        <a href="@($"users/details?id={userbook.UserId}")">
+            @userbook.User.Username
+        </a>
+    </TemplateColumn>
+    <TemplateColumn Title="Book Title" Context="userbook">
+        <a href="@($"books/details?id={userbook.BookId}")">
+            @userbook.Book.Title
+        </a>
+    </TemplateColumn>
     <PropertyColumn Property="userbook => userbook.Status" Title="Status" />
     <PropertyColumn Property="userbook => userbook.Rating" Title="Rating" />
     <PropertyColumn Property="userbook => userbook.Notes" Title="Notes" />

@@ -19,9 +19,13 @@
     {
         <dl class="row">
             <dt class="col-sm-2">User</dt>
-            <dd class="col-sm-10">@userbook.User.Username</dd>
+            <dd class="col-sm-10">
+                <a href="@($"users/details?id={userbook.UserId}")">@userbook.User.Username</a>
+            </dd>
             <dt class="col-sm-2">Book</dt>
-            <dd class="col-sm-10">@userbook.Book.Title</dd>
+            <dd class="col-sm-10">
+                <a href="@($"books/details?id={userbook.BookId}")">@userbook.Book.Title</a>
+            </dd>
             <dt class="col-sm-2">Status</dt>
             <dd class="col-sm-10">@userbook.Status</dd>
             <dt class="col-sm-2">Rating</dt>
@@ -41,6 +45,7 @@
         </dl>
         <div>
             <a href="@($"/userbooks/edit?id={userbook.Id}")">Edit</a> |
+            <a href="@($"/userbooks/delete?id={userbook.Id}")">Delete</a> |
             <a href="@($"/userbooks")">Back to List</a>
         </div>
     }

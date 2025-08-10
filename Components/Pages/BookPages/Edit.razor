@@ -72,12 +72,14 @@ else
                     <ValidationMessage For="() => Book.CoverImageUrl" class="text-danger" />
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
+                <button @onclick="DeleteBook" class="btn btn-danger">Delete</button>
             </EditForm>
         </div>
     </div>
 }
 
 <div>
+    <a href="@((Book is not null ? $"/books/details?id={Book.Id}" : "#"))">View Details</a>
     <a href="/books">Back to List</a>
 </div>
 
@@ -129,5 +131,22 @@ else
     {
         using var context = DbFactory.CreateDbContext();
         return context.Books.Any(e => e.Id == id);
+    }
+
+    private async Task DeleteBook()
+    {
+        if (Book is null)
+        {
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        var bookToDelete = await context.Books.FindAsync(Book.Id);
+        if (bookToDelete != null)
+        {
+            context.Books.Remove(bookToDelete);
+            await context.SaveChangesAsync();
+        }
+        NavigationManager.NavigateTo("/books");
     }
 }

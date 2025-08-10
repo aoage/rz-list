@@ -43,12 +43,14 @@ else
                     <ValidationMessage For="() => User.Permissions" class="text-danger" />
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
+                <button @onclick="DeleteUser" class="btn btn-danger">Delete</button>
             </EditForm>
         </div>
     </div>
 }
 
 <div>
+    <a href="@((User is not null ? $"/users/details?id={User.Id}" : "#"))">View Details</a>
     <a href="/users">Back to List</a>
 </div>
 
@@ -100,5 +102,22 @@ else
     {
         using var context = DbFactory.CreateDbContext();
         return context.Users.Any(e => e.Id == id);
+    }
+
+    private async Task DeleteUser()
+    {
+        if (User is null)
+        {
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        var userToDelete = await context.Users.FindAsync(User.Id);
+        if (userToDelete != null)
+        {
+            context.Users.Remove(userToDelete);
+            await context.SaveChangesAsync();
+        }
+        NavigationManager.NavigateTo("/users");
     }
 }
