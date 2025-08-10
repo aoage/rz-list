@@ -1,0 +1,60 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Dotnet artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+.nuget/
+*.dgspec.json
+*.nuget.props
+*.nuget.targets
+
+# Rider
+.idea/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Publish output
+wwwroot/dist/
+wwwroot/node_modules/
+publish/
+*.Publish.xml
+
+# Blazor specific
+wwwroot/css/app.css
+wwwroot/css/app.min.css
+wwwroot/js/app.js
+wwwroot/js/app.min.js
+
+# Others
+*.dbmdl
+*.bak
+*.backup
+*.swp
+*.tmp
