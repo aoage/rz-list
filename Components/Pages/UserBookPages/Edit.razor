@@ -44,8 +44,9 @@ else
 
                 <div class="mb-3">
                     <label for="rating" class="form-label">Rating (0-5):</label>
-                    <InputNumber id="rating" @bind-Value="UserBook.Rating" class="form-control" min="0" max="5"
-                        step="0.1" />
+                    <input type="number" id="rating" value="@(UserBook.Rating?.ToString() ?? "")"
+                        @onchange="@((e) => UserBook.Rating = string.IsNullOrEmpty(e.Value?.ToString()) ? null : long.Parse(e.Value?.ToString() ?? ""))"
+                        class="form-control" />
                     <ValidationMessage For="() => UserBook.Rating" class="text-danger" />
                 </div>
 
@@ -57,14 +58,17 @@ else
 
                 <div class="mb-3">
                     <label for="progresspercentage" class="form-label">Progress (%):</label>
-                    <InputNumber id="progresspercentage" @bind-Value="UserBook.ProgressPercentage" class="form-control"
-                        min="0" max="100" step="0.1" />
+                    <input type="number" id="progresspercentage" value="@(UserBook.ProgressPercentage?.ToString() ?? "")"
+                        @onchange="@((e) => UserBook.ProgressPercentage = string.IsNullOrEmpty(e.Value?.ToString()) ? null : decimal.Parse(e.Value?.ToString() ?? ""))"
+                        class="form-control" min="0" max="100" step="0.1" />
                     <ValidationMessage For="() => UserBook.ProgressPercentage" class="text-danger" />
                 </div>
 
                 <div class="mb-3">
                     <label for="datefinished" class="form-label">Date Finished:</label>
-                    <InputDate id="datefinished" @bind-Value="UserBook.DateFinished" class="form-control" />
+                    <input type="date" id="datefinished" value="@(UserBook.DateFinished?.ToString("yyyy-MM-dd") ?? "")"
+                        @onchange="@((e) => UserBook.DateFinished = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value?.ToString() ?? string.Empty))"
+                        class="form-control" />
                     <ValidationMessage For="() => UserBook.DateFinished" class="text-danger" />
                 </div>
 

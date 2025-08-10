@@ -15,12 +15,13 @@
     {
         <p><em>Loading...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
-            <dt class="col-sm-2">UserId</dt>
-            <dd class="col-sm-10">@userbook.UserId</dd>
-            <dt class="col-sm-2">BookId</dt>
-            <dd class="col-sm-10">@userbook.BookId</dd>
+            <dt class="col-sm-2">User</dt>
+            <dd class="col-sm-10">@userbook.User.Username</dd>
+            <dt class="col-sm-2">Book</dt>
+            <dd class="col-sm-10">@userbook.Book.Title</dd>
             <dt class="col-sm-2">Status</dt>
             <dd class="col-sm-10">@userbook.Status</dd>
             <dt class="col-sm-2">Rating</dt>
@@ -54,7 +55,10 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        userbook = await context.UserBooks.FirstOrDefaultAsync(m => m.Id == Id);
+        userbook = await context.UserBooks
+            .Include(ub => ub.User)
+            .Include(ub => ub.Book)
+            .FirstOrDefaultAsync(m => m.Id == Id);
 
         if (userbook is null)
         {

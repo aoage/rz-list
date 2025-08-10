@@ -15,16 +15,16 @@
 </p>
 
 <QuickGrid Class="table" Items="context.UserBooks">
-    <PropertyColumn Property="userbook => userbook.UserId" />
-    <PropertyColumn Property="userbook => userbook.BookId" />
-    <PropertyColumn Property="userbook => userbook.Status" />
-    <PropertyColumn Property="userbook => userbook.Rating" />
-    <PropertyColumn Property="userbook => userbook.Notes" />
-    <PropertyColumn Property="userbook => userbook.DateAdded" />
-    <PropertyColumn Property="userbook => userbook.DateStarted" />
-    <PropertyColumn Property="userbook => userbook.DateFinished" />
-    <PropertyColumn Property="userbook => userbook.ProgressPercentage" />
-    <PropertyColumn Property="userbook => userbook.IsFavorite" />
+    <PropertyColumn Property="userbook => userbook.User.Username" Title="Username" />
+    <PropertyColumn Property="userbook => userbook.Book.Title" Title="Book Title" />
+    <PropertyColumn Property="userbook => userbook.Status" Title="Status" />
+    <PropertyColumn Property="userbook => userbook.Rating" Title="Rating" />
+    <PropertyColumn Property="userbook => userbook.Notes" Title="Notes" />
+    <PropertyColumn Property="userbook => userbook.DateAdded" Title="Date Added" />
+    <PropertyColumn Property="userbook => userbook.DateStarted" Title="Date Started" />
+    <PropertyColumn Property="userbook => userbook.DateFinished" Title="Date Finished" />
+    <PropertyColumn Property="userbook => userbook.ProgressPercentage" Title="Progress Percentage" />
+    <PropertyColumn Property="userbook => userbook.IsFavorite" Title="Is Favorite" />
 
     <TemplateColumn Context="userbook">
         <a href="@($"userbooks/edit?id={userbook.Id}")">Edit</a> |
@@ -35,10 +35,17 @@
 
 @code {
     private RzListDbContext context = default!;
+    private List<UserBook>? FilteredUserBooks;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
+        FilteredUserBooks = await context.UserBooks
+            .Include(ub => ub.User)
+            .Include(ub => ub.Book)
+            .OrderBy(ub => ub.User.Username)
+            .ThenBy(ub => ub.Book.Title)
+            .ToListAsync();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
