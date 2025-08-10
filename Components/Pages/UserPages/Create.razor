@@ -24,12 +24,7 @@
                 <label for="email" class="form-label">Email:</label> 
                 <InputText id="email" @bind-Value="User.Email" class="form-control" aria-required="true"/> 
                 <ValidationMessage For="() => User.Email" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="datecreated" class="form-label">DateCreated:</label> 
-                <InputDate id="datecreated" @bind-Value="User.DateCreated" class="form-control" /> 
-                <ValidationMessage For="() => User.DateCreated" class="text-danger" /> 
-            </div>        
+            </div>       
             <div class="mb-3">
                 <label for="permissions" class="form-label">Permissions:</label>
                 <InputSelect id="permissions" @bind-Value="User.Permissions" class="form-control">
@@ -57,6 +52,7 @@
     private async Task AddUser()
     {
         using var context = DbFactory.CreateDbContext();
+        User.DateCreated = DateTime.UtcNow;
         context.Users.Add(User);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/users");

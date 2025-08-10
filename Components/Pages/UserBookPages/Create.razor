@@ -68,12 +68,6 @@
             </div>
             
             <div class="mb-3">
-                <label for="datestarted" class="form-label">Date Started:</label>
-                <InputDate id="datestarted" @bind-Value="UserBook.DateStarted" class="form-control" />
-                <ValidationMessage For="() => UserBook.DateStarted" class="text-danger" />
-            </div>
-            
-            <div class="mb-3">
                 <label for="datefinished" class="form-label">Date Finished:</label>
                 <InputDate id="datefinished" @bind-Value="UserBook.DateFinished" class="form-control" />
                 <ValidationMessage For="() => UserBook.DateFinished" class="text-danger" />
@@ -112,8 +106,6 @@
     {
         using var context = DbFactory.CreateDbContext();
         
-        // Set auto-generated values
-        UserBook.Id = Guid.CreateVersion7();
         UserBook.DateAdded = DateTime.UtcNow;
         
         // Auto-set DateStarted if status is CurrentlyReading and no date is set

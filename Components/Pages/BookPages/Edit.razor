@@ -20,16 +20,16 @@ else
         <div class="col-md-4">
             <EditForm method="post" Model="Book" OnValidSubmit="UpdateBook" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
+                <ValidationSummary role="alert" />
                 <input type="hidden" name="Book.Id" value="@Book.Id" />
                 <div class="mb-3">
-                    <label for="title" class="form-label">Title:</label>
-                    <InputText id="title" @bind-Value="Book.Title" class="form-control" aria-required="true"/>
+                    <label for="title" class="form-label">Title: <span class="text-danger">*</span></label>
+                    <InputText id="title" @bind-Value="Book.Title" class="form-control" aria-required="true" />
                     <ValidationMessage For="() => Book.Title" class="text-danger" />
                 </div>
                 <div class="mb-3">
-                    <label for="author" class="form-label">Author:</label>
-                    <InputText id="author" @bind-Value="Book.Author" class="form-control" aria-required="true"/>
+                    <label for="author" class="form-label">Author: <span class="text-danger">*</span></label>
+                    <InputText id="author" @bind-Value="Book.Author" class="form-control" aria-required="true" />
                     <ValidationMessage For="() => Book.Author" class="text-danger" />
                 </div>
                 <div class="mb-3">
@@ -38,8 +38,10 @@ else
                     <ValidationMessage For="() => Book.ISBN" class="text-danger" />
                 </div>
                 <div class="mb-3">
-                    <label for="publisheddate" class="form-label">PublishedDate:</label>
-                    <InputDate id="publisheddate" @bind-Value="Book.PublishedDate" class="form-control" />
+                    <label for="publisheddate" class="form-label">Published Date:</label>
+                    <input type="date" id="publisheddate" value="@(Book.PublishedDate?.ToString("yyyy-MM-dd") ?? "")"
+                        @onchange="@((e) => Book.PublishedDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value?.ToString() ?? string.Empty))"
+                        class="form-control" />
                     <ValidationMessage For="() => Book.PublishedDate" class="text-danger" />
                 </div>
                 <div class="mb-3">
@@ -48,8 +50,10 @@ else
                     <ValidationMessage For="() => Book.Description" class="text-danger" />
                 </div>
                 <div class="mb-3">
-                    <label for="charactercount" class="form-label">CharacterCount:</label>
-                    <InputNumber id="charactercount" @bind-Value="Book.CharacterCount" class="form-control" />
+                    <label for="charactercount" class="form-label">Character Count:</label>
+                    <input type="number" id="charactercount" value="@(Book.CharacterCount?.ToString() ?? "")"
+                        @onchange="@((e) => Book.CharacterCount = string.IsNullOrEmpty(e.Value?.ToString()) ? null : long.Parse(e.Value?.ToString() ?? ""))"
+                        class="form-control" />
                     <ValidationMessage For="() => Book.CharacterCount" class="text-danger" />
                 </div>
                 <div class="mb-3">
@@ -66,11 +70,6 @@ else
                     <label for="coverimageurl" class="form-label">CoverImageUrl:</label>
                     <InputText id="coverimageurl" @bind-Value="Book.CoverImageUrl" class="form-control" />
                     <ValidationMessage For="() => Book.CoverImageUrl" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="dateadded" class="form-label">DateAdded:</label>
-                    <InputDate id="dateadded" @bind-Value="Book.DateAdded" class="form-control" />
-                    <ValidationMessage For="() => Book.DateAdded" class="text-danger" />
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
             </EditForm>

@@ -15,7 +15,7 @@ namespace RzList.Models
         [StringLength(255)]
         public string Email { get; set; } = string.Empty;
         
-        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+        public DateTime DateCreated { get; set; }
         
         public UserPermissions Permissions { get; set; } = UserPermissions.BasicUser;
         
