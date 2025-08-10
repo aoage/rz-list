@@ -19,9 +19,6 @@ namespace RzList.Models
         
         public UserPermissions Permissions { get; set; } = UserPermissions.BasicUser;
         
-        // Navigation property
-        public virtual ICollection<UserBook> UserBooks { get; set; } = new List<UserBook>();
-        
         // Helper methods for permission checking
         public bool HasPermission(UserPermissions permission)
         {

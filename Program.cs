@@ -5,7 +5,7 @@ using RzList.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<RzListDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("RzListDbContext") ?? throw new InvalidOperationException("Connection string 'RzListDbContext' not found.")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 

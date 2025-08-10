@@ -1,0 +1,45 @@
+@page "/userbooks"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using RzList.Models
+@using RzList.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="userbooks/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.UserBooks">
+    <PropertyColumn Property="userbook => userbook.UserId" />
+    <PropertyColumn Property="userbook => userbook.BookId" />
+    <PropertyColumn Property="userbook => userbook.Status" />
+    <PropertyColumn Property="userbook => userbook.Rating" />
+    <PropertyColumn Property="userbook => userbook.Notes" />
+    <PropertyColumn Property="userbook => userbook.DateAdded" />
+    <PropertyColumn Property="userbook => userbook.DateStarted" />
+    <PropertyColumn Property="userbook => userbook.DateFinished" />
+    <PropertyColumn Property="userbook => userbook.ProgressPercentage" />
+    <PropertyColumn Property="userbook => userbook.IsFavorite" />
+
+    <TemplateColumn Context="userbook">
+        <a href="@($"userbooks/edit?id={userbook.Id}")">Edit</a> |
+        <a href="@($"userbooks/details?id={userbook.Id}")">Details</a> |
+        <a href="@($"userbooks/delete?id={userbook.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private RzListDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

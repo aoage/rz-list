@@ -58,3 +58,6 @@ wwwroot/js/app.min.js
 *.backup
 *.swp
 *.tmp
+
+# sqlite
+*.db

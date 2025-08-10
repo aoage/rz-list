@@ -1,0 +1,64 @@
+@page "/userbooks/details"
+@using Microsoft.EntityFrameworkCore
+@using RzList.Models
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>UserBook</h2>
+    <hr />
+    @if (userbook is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">UserId</dt>
+            <dd class="col-sm-10">@userbook.UserId</dd>
+            <dt class="col-sm-2">BookId</dt>
+            <dd class="col-sm-10">@userbook.BookId</dd>
+            <dt class="col-sm-2">Status</dt>
+            <dd class="col-sm-10">@userbook.Status</dd>
+            <dt class="col-sm-2">Rating</dt>
+            <dd class="col-sm-10">@userbook.Rating</dd>
+            <dt class="col-sm-2">Notes</dt>
+            <dd class="col-sm-10">@userbook.Notes</dd>
+            <dt class="col-sm-2">DateAdded</dt>
+            <dd class="col-sm-10">@userbook.DateAdded</dd>
+            <dt class="col-sm-2">DateStarted</dt>
+            <dd class="col-sm-10">@userbook.DateStarted</dd>
+            <dt class="col-sm-2">DateFinished</dt>
+            <dd class="col-sm-10">@userbook.DateFinished</dd>
+            <dt class="col-sm-2">ProgressPercentage</dt>
+            <dd class="col-sm-10">@userbook.ProgressPercentage</dd>
+            <dt class="col-sm-2">IsFavorite</dt>
+            <dd class="col-sm-10">@userbook.IsFavorite</dd>
+        </dl>
+        <div>
+            <a href="@($"/userbooks/edit?id={userbook.Id}")">Edit</a> |
+            <a href="@($"/userbooks")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private UserBook? userbook;
+
+    [SupplyParameterFromQuery]
+    private Guid Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        userbook = await context.UserBooks.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (userbook is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

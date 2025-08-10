@@ -34,8 +34,5 @@ namespace RzList.Models
         public string? CoverImageUrl { get; set; }
         
         public DateTime DateAdded { get; set; } = DateTime.UtcNow;
-        
-        // Navigation property
-        public virtual ICollection<UserBook> UserBooks { get; set; } = new List<UserBook>();
     }
 }

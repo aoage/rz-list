@@ -1,0 +1,143 @@
+@page "/userbooks/edit"
+@using Microsoft.EntityFrameworkCore
+@using RzList.Models
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Reading List Entry</PageTitle>
+
+<h1>Edit Reading List Entry</h1>
+@if (UserBook is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm method="post" Model="UserBook" OnValidSubmit="UpdateUserBook" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <input type="hidden" name="UserBook.Id" value="@UserBook.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label">User:</label>
+                    <p class="form-control-plaintext">@UserBook.User?.Username (@UserBook.User?.Email)</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Book:</label>
+                    <p class="form-control-plaintext">@UserBook.Book?.Title by @UserBook.Book?.Author</p>
+                </div>
+
+                <div class="mb-3">
+                    <label for="status" class="form-label">Reading Status:</label>
+                    <InputSelect id="status" @bind-Value="UserBook.Status" class="form-control">
+                        <option value="@ReadingStatus.WantToRead">Want to Read</option>
+                        <option value="@ReadingStatus.CurrentlyReading">Currently Reading</option>
+                        <option value="@ReadingStatus.Finished">Finished</option>
+                        <option value="@ReadingStatus.DNF">Did Not Finish</option>
+                    </InputSelect>
+                    <ValidationMessage For="() => UserBook.Status" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="rating" class="form-label">Rating (0-5):</label>
+                    <InputNumber id="rating" @bind-Value="UserBook.Rating" class="form-control" min="0" max="5"
+                        step="0.1" />
+                    <ValidationMessage For="() => UserBook.Rating" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes:</label>
+                    <InputTextArea id="notes" @bind-Value="UserBook.Notes" class="form-control" rows="3" />
+                    <ValidationMessage For="() => UserBook.Notes" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="progresspercentage" class="form-label">Progress (%):</label>
+                    <InputNumber id="progresspercentage" @bind-Value="UserBook.ProgressPercentage" class="form-control"
+                        min="0" max="100" step="0.1" />
+                    <ValidationMessage For="() => UserBook.ProgressPercentage" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="datestarted" class="form-label">Date Started:</label>
+                    <InputDate id="datestarted" @bind-Value="UserBook.DateStarted" class="form-control" />
+                    <ValidationMessage For="() => UserBook.DateStarted" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="datefinished" class="form-label">Date Finished:</label>
+                    <InputDate id="datefinished" @bind-Value="UserBook.DateFinished" class="form-control" />
+                    <ValidationMessage For="() => UserBook.DateFinished" class="text-danger" />
+                </div>
+
+                <div class="mb-3 form-check">
+                    <InputCheckbox id="isfavorite" @bind-Value="UserBook.IsFavorite" class="form-check-input" />
+                    <label for="isfavorite" class="form-check-label">Mark as Favorite</label>
+                    <ValidationMessage For="() => UserBook.IsFavorite" class="text-danger" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Update</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/userbooks">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public Guid Id { get; set; }
+
+    [SupplyParameterFromForm]
+    public UserBook? UserBook { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        UserBook ??= await context.UserBooks
+        .Include(ub => ub.User)
+        .Include(ub => ub.Book)
+        .FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (UserBook is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    public async Task UpdateUserBook()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(UserBook!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!UserBookExists(UserBook!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/userbooks");
+    }
+
+    bool UserBookExists(Guid id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.UserBooks.Any(e => e.Id == id);
+    }
+}

@@ -1,0 +1,64 @@
+@page "/users/create"
+@using Microsoft.EntityFrameworkCore
+@using RzList.Models
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>User</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="User" OnValidSubmit="AddUser" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username:</label> 
+                <InputText id="username" @bind-Value="User.Username" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => User.Username" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label> 
+                <InputText id="email" @bind-Value="User.Email" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => User.Email" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="datecreated" class="form-label">DateCreated:</label> 
+                <InputDate id="datecreated" @bind-Value="User.DateCreated" class="form-control" /> 
+                <ValidationMessage For="() => User.DateCreated" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="permissions" class="form-label">Permissions:</label>
+                <InputSelect id="permissions" @bind-Value="User.Permissions" class="form-control">
+                    <option value="@UserPermissions.BasicUser">Basic User</option>
+                    <option value="@UserPermissions.BookModerator">Book Moderator</option>
+                    <option value="@UserPermissions.UserModerator">User Moderator</option>
+                    <option value="@UserPermissions.Administrator">Administrator</option>
+                </InputSelect>
+                <ValidationMessage For="() => User.Permissions" class="text-danger" />
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/users">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private User User { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddUser()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Users.Add(User);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/users");
+    }
+}

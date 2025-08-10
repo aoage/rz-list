@@ -1,0 +1,135 @@
+@page "/userbooks/create"
+@using Microsoft.EntityFrameworkCore
+@using RzList.Models
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Add Book to Reading List</PageTitle>
+
+<h1>Add Book to Reading List</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm method="post" Model="UserBook" OnValidSubmit="AddUserBook" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            
+            <div class="mb-3">
+                <label for="userid" class="form-label">User:</label>
+                <InputSelect id="userid" @bind-Value="UserBook.UserId" class="form-control">
+                    <option value="">Select a user...</option>
+                    @foreach (var user in Users)
+                    {
+                        <option value="@user.Id">@user.Username (@user.Email)</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => UserBook.UserId" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="bookid" class="form-label">Book:</label>
+                <InputSelect id="bookid" @bind-Value="UserBook.BookId" class="form-control">
+                    <option value="">Select a book...</option>
+                    @foreach (var book in Books)
+                    {
+                        <option value="@book.Id">@book.Title by @book.Author</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => UserBook.BookId" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="status" class="form-label">Reading Status:</label>
+                <InputSelect id="status" @bind-Value="UserBook.Status" class="form-control">
+                    <option value="@ReadingStatus.WantToRead">Want to Read</option>
+                    <option value="@ReadingStatus.CurrentlyReading">Currently Reading</option>
+                    <option value="@ReadingStatus.Finished">Finished</option>
+                    <option value="@ReadingStatus.DNF">Did Not Finish</option>
+                </InputSelect>
+                <ValidationMessage For="() => UserBook.Status" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="rating" class="form-label">Rating (0-5):</label>
+                <InputNumber id="rating" @bind-Value="UserBook.Rating" class="form-control" min="0" max="5" step="0.1" />
+                <ValidationMessage For="() => UserBook.Rating" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes:</label>
+                <InputTextArea id="notes" @bind-Value="UserBook.Notes" class="form-control" rows="3" />
+                <ValidationMessage For="() => UserBook.Notes" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="progresspercentage" class="form-label">Progress (%):</label>
+                <InputNumber id="progresspercentage" @bind-Value="UserBook.ProgressPercentage" class="form-control" min="0" max="100" step="0.1" />
+                <ValidationMessage For="() => UserBook.ProgressPercentage" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="datestarted" class="form-label">Date Started:</label>
+                <InputDate id="datestarted" @bind-Value="UserBook.DateStarted" class="form-control" />
+                <ValidationMessage For="() => UserBook.DateStarted" class="text-danger" />
+            </div>
+            
+            <div class="mb-3">
+                <label for="datefinished" class="form-label">Date Finished:</label>
+                <InputDate id="datefinished" @bind-Value="UserBook.DateFinished" class="form-control" />
+                <ValidationMessage For="() => UserBook.DateFinished" class="text-danger" />
+            </div>
+            
+            <div class="mb-3 form-check">
+                <InputCheckbox id="isfavorite" @bind-Value="UserBook.IsFavorite" class="form-check-input" />
+                <label for="isfavorite" class="form-check-label">Mark as Favorite</label>
+                <ValidationMessage For="() => UserBook.IsFavorite" class="text-danger" />
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Add to Reading List</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/userbooks">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private UserBook UserBook { get; set; } = new();
+    
+    private List<User> Users { get; set; } = new();
+    private List<Book> Books { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Users = await context.Users.OrderBy(u => u.Username).ToListAsync();
+        Books = await context.Books.OrderBy(b => b.Title).ToListAsync();
+    }
+
+    private async Task AddUserBook()
+    {
+        using var context = DbFactory.CreateDbContext();
+        
+        // Set auto-generated values
+        UserBook.Id = Guid.CreateVersion7();
+        UserBook.DateAdded = DateTime.UtcNow;
+        
+        // Auto-set DateStarted if status is CurrentlyReading and no date is set
+        if (UserBook.Status == ReadingStatus.CurrentlyReading && !UserBook.DateStarted.HasValue)
+        {
+            UserBook.DateStarted = DateTime.UtcNow;
+        }
+        
+        // Auto-set DateFinished if status is Finished and no date is set
+        if (UserBook.Status == ReadingStatus.Finished && !UserBook.DateFinished.HasValue)
+        {
+            UserBook.DateFinished = DateTime.UtcNow;
+        }
+        
+        context.UserBooks.Add(UserBook);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/userbooks");
+    }
+}

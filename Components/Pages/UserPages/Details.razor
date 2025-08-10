@@ -1,0 +1,52 @@
+@page "/users/details"
+@using Microsoft.EntityFrameworkCore
+@using RzList.Models
+@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>User</h2>
+    <hr />
+    @if (user is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Username</dt>
+            <dd class="col-sm-10">@user.Username</dd>
+            <dt class="col-sm-2">Email</dt>
+            <dd class="col-sm-10">@user.Email</dd>
+            <dt class="col-sm-2">DateCreated</dt>
+            <dd class="col-sm-10">@user.DateCreated</dd>
+            <dt class="col-sm-2">Permissions</dt>
+            <dd class="col-sm-10">@user.Permissions</dd>
+        </dl>
+        <div>
+            <a href="@($"/users/edit?id={user.Id}")">Edit</a> |
+            <a href="@($"/users")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private User? user;
+
+    [SupplyParameterFromQuery]
+    private Guid Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        user = await context.Users.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (user is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}
