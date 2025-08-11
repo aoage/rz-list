@@ -74,4 +74,28 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 
+// Development endpoints for database seeding
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/dev/seed-database", async (IDbContextFactory<Data.RzListDbContext> dbFactory) =>
+    {
+        await rz_list.Utilities.DatabaseUtility.SeedDatabase(dbFactory);
+        var stats = await rz_list.Utilities.DatabaseUtility.GetDatabaseStats(dbFactory);
+        return Results.Ok(new { message = "Database seeded successfully!", stats });
+    });
+
+    app.MapGet("/dev/clear-and-reseed", async (IDbContextFactory<Data.RzListDbContext> dbFactory) =>
+    {
+        await rz_list.Utilities.DatabaseUtility.ClearAndReseedDatabase(dbFactory);
+        var stats = await rz_list.Utilities.DatabaseUtility.GetDatabaseStats(dbFactory);
+        return Results.Ok(new { message = "Database cleared and reseeded successfully!", stats });
+    });
+
+    app.MapGet("/dev/database-stats", async (IDbContextFactory<Data.RzListDbContext> dbFactory) =>
+    {
+        var stats = await rz_list.Utilities.DatabaseUtility.GetDatabaseStats(dbFactory);
+        return Results.Ok(stats);
+    });
+}
+
 app.Run();
