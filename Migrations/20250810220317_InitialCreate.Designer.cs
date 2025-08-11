@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using RzList.Data;
+using Data;
 
 #nullable disable
 
@@ -20,7 +20,7 @@ namespace rzlist.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
 
-            modelBuilder.Entity("RzList.Models.Book", b =>
+            modelBuilder.Entity("Models.Entities.Book", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -70,7 +70,7 @@ namespace rzlist.Migrations
                     b.ToTable("Books");
                 });
 
-            modelBuilder.Entity("RzList.Models.User", b =>
+            modelBuilder.Entity("Models.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -97,7 +97,7 @@ namespace rzlist.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("RzList.Models.UserBook", b =>
+            modelBuilder.Entity("Models.Entities.UserBook", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -143,15 +143,15 @@ namespace rzlist.Migrations
                     b.ToTable("UserBooks");
                 });
 
-            modelBuilder.Entity("RzList.Models.UserBook", b =>
+            modelBuilder.Entity("Models.Entities.UserBook", b =>
                 {
-                    b.HasOne("RzList.Models.Book", "Book")
+                    b.HasOne("Models.Entities.Book", "Book")
                         .WithMany()
                         .HasForeignKey("BookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RzList.Models.User", "User")
+                    b.HasOne("Models.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

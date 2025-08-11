@@ -1,9 +1,9 @@
 @page "/books/edit"
 @using Microsoft.EntityFrameworkCore
-@using RzList.Models
+@using Models.Entities
 @using System.ComponentModel.DataAnnotations
 @using System.Reflection
-@inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
+@inject IDbContextFactory<Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Edit</PageTitle>

@@ -1,6 +1,6 @@
 using rz_list.Components;
 using Microsoft.EntityFrameworkCore;
-using RzList.Data;
+using Data;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
