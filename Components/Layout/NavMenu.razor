@@ -4,13 +4,20 @@
 
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
-    <MudNavLink Href="books" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Book">Books</MudNavLink>
-    <MudNavLink Href="userbooks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">UserBooks</MudNavLink>
-
-    <MudNavLink Href="auth" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Lock">Auth Required</MudNavLink>
+    <AuthorizeView Policy="RequireUserModerator">
+        <Authorized>
+            <MudNavLink Href="users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Policy="RequireBookModerator">
+        <Authorized>
+            <MudNavLink Href="books" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Book">Books</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
     <AuthorizeView>
         <Authorized>
+            <MudNavLink Href="userbooks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">UserBooks
+            </MudNavLink>
             <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">
                 @context.User.Identity?.Name</MudNavLink>
             <form action="Account/Logout" method="post">

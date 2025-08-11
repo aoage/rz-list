@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using rz_list.Components.Account;
 using Models.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Security;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<RzListDbContext>(options =>
@@ -23,6 +25,18 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+builder.Services.AddAuthorization(options =>
+{
+    foreach (UserPermissions perm in Enum.GetValues(typeof(UserPermissions)))
+    {
+        options.AddPolicy(
+            $"Require{perm}",
+            policy => policy.Requirements.Add(new PermissionRequirement(perm))
+        );
+    }
+});
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
 builder.Services.AddAuthentication(options =>
     {
