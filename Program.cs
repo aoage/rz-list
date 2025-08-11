@@ -9,8 +9,6 @@ builder.Services.AddDbContextFactory<RzListDbContext>(options =>
 
 builder.Services.AddMudServices();
 
-builder.Services.AddQuickGridEntityFrameworkAdapter();
-
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Add services to the container.
