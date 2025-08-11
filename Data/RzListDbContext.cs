@@ -1,16 +1,14 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Models.Entities;
 
 namespace Data
 {
-    public class RzListDbContext : DbContext
+    public class RzListDbContext(DbContextOptions<RzListDbContext> options) : IdentityDbContext<User, IdentityRole<Guid>, Guid>(options)
     {
-        public RzListDbContext(DbContextOptions<RzListDbContext> options) : base(options)
-        {
-        }
-
         public DbSet<Book> Books { get; set; }
-        public DbSet<User> Users { get; set; }
+        public override DbSet<User> Users { get; set; }
         public DbSet<UserBook> UserBooks { get; set; }
     }
 }

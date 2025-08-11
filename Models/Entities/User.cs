@@ -6,7 +6,7 @@ namespace Models.Entities
     {
         public override Guid Id { get; set; } = Guid.CreateVersion7();
 
-        public DateTime DateCreated { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 
         public UserPermissions Permissions { get; set; } = UserPermissions.BasicUser;
 
