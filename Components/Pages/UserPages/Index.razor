@@ -1,6 +1,6 @@
 @page "/users"
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components
 @using RzList.Models
 @using RzList.Data
 @implements IAsyncDisposable
@@ -8,24 +8,42 @@
 
 <PageTitle>Index</PageTitle>
 
-<h1>Index</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Users</MudText>
 
-<p>
-    <a href="users/create">Create New</a>
-</p>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="users/create"
+        Class="mb-4">
+        Create New
+    </MudButton>
 
-<QuickGrid Class="table" Items="context.Users">
-    <PropertyColumn Property="user => user.Username" />
-    <PropertyColumn Property="user => user.Email" />
-    <PropertyColumn Property="user => user.DateCreated" />
-    <PropertyColumn Property="user => user.Permissions" />
+    <MudDataGrid T="User" Items="@context.Users" Filterable="true" SortMode="SortMode.Multiple" Dense="true"
+        Hover="true" ReadOnly="true">
+        <Columns>
+            <PropertyColumn Property="x => x.Username" Title="Username" />
+            <PropertyColumn Property="x => x.Email" Title="Email" />
+            <PropertyColumn Property="x => x.DateCreated" Title="Date Created" />
+            <PropertyColumn Property="x => x.Permissions" Title="Permissions" />
 
-    <TemplateColumn Context="user">
-        <a href="@($"users/edit?id={user.Id}")">Edit</a> |
-        <a href="@($"users/details?id={user.Id}")">Details</a> |
-        <a href="@($"users/delete?id={user.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                        <MudButton StartIcon="@Icons.Material.Filled.Edit" Href="@($"users/edit?id={context.Item.Id}")">
+                            Edit
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Info"
+                            Href="@($"users/details?id={context.Item.Id}")">
+                            Details
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                            Href="@($"users/delete?id={context.Item.Id}")">
+                            Delete
+                        </MudButton>
+                    </MudButtonGroup>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudContainer>
 
 @code {
     private RzListDbContext context = default!;

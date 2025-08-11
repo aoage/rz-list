@@ -1,11 +1,13 @@
 using rz_list.Components;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using RzList.Data;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<RzListDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddMudServices();
 
 builder.Services.AddQuickGridEntityFrameworkAdapter();
 

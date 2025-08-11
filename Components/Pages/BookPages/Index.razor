@@ -1,6 +1,6 @@
 @page "/books"
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components
 @using RzList.Models
 @using RzList.Data
 @implements IAsyncDisposable
@@ -8,30 +8,48 @@
 
 <PageTitle>Index</PageTitle>
 
-<h1>Index</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">User Books</MudText>
 
-<p>
-    <a href="books/create">Create New</a>
-</p>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="books/create"
+        Class="mb-4">
+        Create New
+    </MudButton>
 
-<QuickGrid Class="table" Items="context.Books">
-    <PropertyColumn Property="book => book.Title" />
-    <PropertyColumn Property="book => book.Author" />
-    <PropertyColumn Property="book => book.ISBN" />
-    <PropertyColumn Property="book => book.PublishedDate" />
-    <PropertyColumn Property="book => book.Description" />
-    <PropertyColumn Property="book => book.CharacterCount" />
-    <PropertyColumn Property="book => book.Genre" />
-    <PropertyColumn Property="book => book.Publisher" />
-    <PropertyColumn Property="book => book.CoverImageUrl" />
-    <PropertyColumn Property="book => book.DateAdded" />
+    <MudDataGrid T="Book" Items="@context.Books" Filterable="true" SortMode="SortMode.Multiple" Dense="true"
+        Hover="true" ReadOnly="true">
+        <Columns>
+            <PropertyColumn Property="x => x.Title" Title="Title" />
+            <PropertyColumn Property="x => x.Author" Title="Author" />
+            <PropertyColumn Property="x => x.ISBN" Title="ISBN" />
+            <PropertyColumn Property="x => x.PublishedDate" Title="Published Date" />
+            <PropertyColumn Property="x => x.Description" Title="Description" />
+            <PropertyColumn Property="x => x.CharacterCount" Title="Character Count" />
+            <PropertyColumn Property="x => x.Genre" Title="Genre" />
+            <PropertyColumn Property="x => x.Publisher" Title="Publisher" />
+            <PropertyColumn Property="x => x.CoverImageUrl" Title="Cover Image" />
+            <PropertyColumn Property="x => x.DateAdded" Title="Date Added" />
 
-    <TemplateColumn Context="book">
-        <a href="@($"books/edit?id={book.Id}")">Edit</a> |
-        <a href="@($"books/details?id={book.Id}")">Details</a> |
-        <a href="@($"books/delete?id={book.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                        <MudButton StartIcon="@Icons.Material.Filled.Edit" Href="@($"books/edit?id={context.Item.Id}")">
+                            Edit
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Info"
+                            Href="@($"books/details?id={context.Item.Id}")">
+                            Details
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                            Href="@($"books/delete?id={context.Item.Id}")">
+                            Delete
+                        </MudButton>
+                    </MudButtonGroup>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudContainer>
 
 @code {
     private RzListDbContext context = default!;

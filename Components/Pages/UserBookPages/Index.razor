@@ -1,6 +1,6 @@
 @page "/userbooks"
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components
 @using RzList.Models
 @using RzList.Data
 @implements IAsyncDisposable
@@ -8,38 +8,63 @@
 
 <PageTitle>Index</PageTitle>
 
-<h1>Index</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">User Books</MudText>
 
-<p>
-    <a href="userbooks/create">Create New</a>
-</p>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+        Href="userbooks/create" Class="mb-4">
+        Create New
+    </MudButton>
 
-<QuickGrid Class="table" Items="context.UserBooks">
-    <TemplateColumn Title="Username" Context="userbook">
-        <a href="@($"users/details?id={userbook.UserId}")">
-            @userbook.User.Username
-        </a>
-    </TemplateColumn>
-    <TemplateColumn Title="Book Title" Context="userbook">
-        <a href="@($"books/details?id={userbook.BookId}")">
-            @userbook.Book.Title
-        </a>
-    </TemplateColumn>
-    <PropertyColumn Property="userbook => userbook.Status" Title="Status" />
-    <PropertyColumn Property="userbook => userbook.Rating" Title="Rating" />
-    <PropertyColumn Property="userbook => userbook.Notes" Title="Notes" />
-    <PropertyColumn Property="userbook => userbook.DateAdded" Title="Date Added" />
-    <PropertyColumn Property="userbook => userbook.DateStarted" Title="Date Started" />
-    <PropertyColumn Property="userbook => userbook.DateFinished" Title="Date Finished" />
-    <PropertyColumn Property="userbook => userbook.ProgressPercentage" Title="Progress Percentage" />
-    <PropertyColumn Property="userbook => userbook.IsFavorite" Title="Is Favorite" />
+    <MudDataGrid T="UserBook" Items="@FilteredUserBooks" Filterable="true" SortMode="SortMode.Multiple" Dense="true"
+        Hover="true" ReadOnly="true">
+        <Columns>
+            <TemplateColumn Title="Username" Sortable="true" Filterable="true">
+                <CellTemplate>
+                    <MudLink Href="@($"users/details?id={context.Item.UserId}")">
+                        @context.Item.User.Username
+                    </MudLink>
+                </CellTemplate>
+            </TemplateColumn>
 
-    <TemplateColumn Context="userbook">
-        <a href="@($"userbooks/edit?id={userbook.Id}")">Edit</a> |
-        <a href="@($"userbooks/details?id={userbook.Id}")">Details</a> |
-        <a href="@($"userbooks/delete?id={userbook.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+            <TemplateColumn Title="Book Title" Sortable="true" Filterable="true">
+                <CellTemplate>
+                    <MudLink Href="@($"books/details?id={context.Item.BookId}")">
+                        @context.Item.Book.Title
+                    </MudLink>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.Rating" Title="Rating" />
+            <PropertyColumn Property="x => x.Notes" Title="Notes" />
+            <PropertyColumn Property="x => x.DateAdded" Title="Date Added" />
+            <PropertyColumn Property="x => x.DateStarted" Title="Date Started" />
+            <PropertyColumn Property="x => x.DateFinished" Title="Date Finished" />
+            <PropertyColumn Property="x => x.ProgressPercentage" Title="Progress %" />
+            <PropertyColumn Property="x => x.IsFavorite" Title="Favorite" />
+
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                        <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                            Href="@($"userbooks/edit?id={context.Item.Id}")">
+                            Edit
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Info"
+                            Href="@($"userbooks/details?id={context.Item.Id}")">
+                            Details
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                            Href="@($"userbooks/delete?id={context.Item.Id}")">
+                            Delete
+                        </MudButton>
+                    </MudButtonGroup>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudContainer>
 
 @code {
     private RzListDbContext context = default!;
@@ -49,11 +74,11 @@
     {
         context = DbFactory.CreateDbContext();
         FilteredUserBooks = await context.UserBooks
-            .Include(ub => ub.User)
-            .Include(ub => ub.Book)
-            .OrderBy(ub => ub.User.Username)
-            .ThenBy(ub => ub.Book.Title)
-            .ToListAsync();
+        .Include(ub => ub.User)
+        .Include(ub => ub.Book)
+        .OrderBy(ub => ub.User.Username)
+        .ThenBy(ub => ub.Book.Title)
+        .ToListAsync();
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
