@@ -6,35 +6,52 @@
 
 <PageTitle>Details</PageTitle>
 
-<h1>Details</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">User Details</MudText>
 
-<div>
-    <h2>User</h2>
-    <hr />
-    @if (user is null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else {
-        <dl class="row">
-            <dt class="col-sm-2">ID</dt>
-            <dd class="col-sm-10">@user.Id</dd>
-            <dt class="col-sm-2">Username</dt>
-            <dd class="col-sm-10">@user.Username</dd>
-            <dt class="col-sm-2">Email</dt>
-            <dd class="col-sm-10">@user.Email</dd>
-            <dt class="col-sm-2">DateCreated</dt>
-            <dd class="col-sm-10">@user.DateCreated</dd>
-            <dt class="col-sm-2">Permissions</dt>
-            <dd class="col-sm-10">@user.Permissions</dd>
-        </dl>
-        <div>
-            <a href="@($"/users/edit?id={user.Id}")">Edit</a> |
-            <a href="@($"/users/delete?id={user.Id}")">Delete</a> |
-            <a href="@($"/users")">Back to List</a>
-        </div>
-    }
-</div>
+    <MudCard Class="mb-4">
+        <MudCardContent>
+            @if (user is null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <MudText>Loading...</MudText>
+            }
+            else
+            {
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="ID" Value="@user.Id.ToString()" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Username" @bind-Value="user.Username" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Email" @bind-Value="user.Email" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Date Created" Value="@user.DateCreated.ToString("yyyy-MM-dd HH:mm:ss")"
+                            ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Permissions" Value="@user.Permissions.ToString()" ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(user is null)"
+                Href="@(user is not null ? $"/users/edit?id={user.Id}" : null)" Class="ml-auto">
+                Edit
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@(user is null)"
+                Href="@(user is not null ? $"/users/delete?id={user.Id}" : null)" Class="ml-2">
+                Delete
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+
+    <MudLink Href="/users" Class="mt-4">Back to List</MudLink>
+</MudContainer>
 
 @code {
     private User? user;

@@ -1,60 +1,89 @@
 @page "/users/create"
 @using Microsoft.EntityFrameworkCore
 @using RzList.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
 @inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create</PageTitle>
 
-<h1>Create</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Create New User</MudText>
 
-<h2>User</h2>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm method="post" Model="User" OnValidSubmit="AddUser" FormName="create" Enhance>
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
-            <div class="mb-3">
-                <label for="username" class="form-label">Username:</label> 
-                <InputText id="username" @bind-Value="User.Username" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => User.Username" class="text-danger" /> 
-            </div>        
-            <div class="mb-3">
-                <label for="email" class="form-label">Email:</label> 
-                <InputText id="email" @bind-Value="User.Email" class="form-control" aria-required="true"/> 
-                <ValidationMessage For="() => User.Email" class="text-danger" /> 
-            </div>       
-            <div class="mb-3">
-                <label for="permissions" class="form-label">Permissions:</label>
-                <InputSelect id="permissions" @bind-Value="User.Permissions" class="form-control">
-                    <option value="@UserPermissions.BasicUser">Basic User</option>
-                    <option value="@UserPermissions.BookModerator">Book Moderator</option>
-                    <option value="@UserPermissions.UserModerator">User Moderator</option>
-                    <option value="@UserPermissions.Administrator">Administrator</option>
-                </InputSelect>
-                <ValidationMessage For="() => User.Permissions" class="text-danger" />
-            </div>        
-            <button type="submit" class="btn btn-primary">Create</button>
-        </EditForm>
-    </div>
-</div>
+    <EditForm Model="@User" OnValidSubmit="OnValidSubmit" Class="mb-4">
+        <DataAnnotationsValidator />
+        <MudCard>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Username"
+                            HelperText="@GetHelperText(nameof(User.Username), "User's login name")"
+                            @bind-Value="User.Username" For="@(() => User.Username)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Email"
+                            HelperText="@GetHelperText(nameof(User.Email), "User's email address")"
+                            @bind-Value="User.Email" For="@(() => User.Email)" InputType="InputType.Email" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudSelect T="UserPermissions" Label="Permissions"
+                            HelperText="@GetHelperText(nameof(User.Permissions), "User's permission level")"
+                            @bind-Value="User.Permissions" For="@(() => User.Permissions)">
+                            <MudSelectItem Value="@UserPermissions.BasicUser">Basic User</MudSelectItem>
+                            <MudSelectItem Value="@UserPermissions.BookModerator">Book Moderator</MudSelectItem>
+                            <MudSelectItem Value="@UserPermissions.UserModerator">User Moderator</MudSelectItem>
+                            <MudSelectItem Value="@UserPermissions.Administrator">Administrator</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                    Class="ml-auto">Create User</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </EditForm>
 
-<div>
-    <a href="/users">Back to List</a>
-</div>
+    @if (error)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            An error occurred while creating the user. Please try again.
+        </MudAlert>
+    }
+
+    <MudLink Href="/users" Class="mt-4">Back to List</MudLink>
+</MudContainer>
 
 @code {
     [SupplyParameterFromForm]
     private User User { get; set; } = new();
+    bool error = false;
 
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task AddUser()
+    private string GetHelperText(string propertyName, string baseText)
     {
-        using var context = DbFactory.CreateDbContext();
-        User.DateCreated = DateTime.UtcNow;
-        context.Users.Add(User);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/users");
+        var property = typeof(User).GetProperty(propertyName);
+        var isRequired = property?.GetCustomAttribute<RequiredAttribute>() != null;
+
+        return isRequired ? $"{baseText} (required)" : baseText;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            using var dbContext = DbFactory.CreateDbContext();
+            User.DateCreated = DateTime.UtcNow;
+            dbContext.Users.Add(User);
+            await dbContext.SaveChangesAsync();
+            error = false;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/users");
+        }
+        catch (Exception)
+        {
+            error = true;
+            StateHasChanged();
+        }
     }
 }
