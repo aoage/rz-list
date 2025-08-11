@@ -22,6 +22,8 @@
     </AuthorizeView>
     <AuthorizeView>
         <Authorized>
+            <MudNavLink Href="userlists" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">My Lists
+            </MudNavLink>
             <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">
                 @context.User.Identity?.Name</MudNavLink>
             <form action="Account/Logout" method="post">
