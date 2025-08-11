@@ -10,6 +10,7 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
 @attribute [Authorize]
 
@@ -194,7 +195,7 @@
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                  Color="Color.Error" 
                                                  Size="Size.Small"
-                                                 @onclick="() => RemoveBookFromList(userBook.Id)" />
+                                                 @onclick="() => ConfirmRemoveBook(userBook.Id, userBook.Book.Title)" />
                                 </MudCardActions>
                             </MudCard>
                         </MudItem>
@@ -263,7 +264,7 @@
                         </MudTd>
                         <MudTd DataLabel="Actions">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                @onclick="() => RemoveBookFromList(context.Id)" />
+                                @onclick="() => ConfirmRemoveBook(context.Id, context.Book.Title)" />
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
@@ -469,6 +470,19 @@
         StateHasChanged();
     }
 
+    private async Task ConfirmRemoveBook(Guid userBookId, string bookTitle)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Remove Book",
+            $"Are you sure you want to remove '{bookTitle}' from this list?",
+            yesText: "Remove", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await RemoveBookFromList(userBookId);
+        }
+    }
+
     private async Task RemoveBookFromList(Guid userBookId)
     {
         var userBook = listBooks.FirstOrDefault(lb => lb.Id == userBookId);
@@ -482,8 +496,6 @@
 
     private string GetBookCoverImage(Book book)
     {
-        // Always return the placeholder for now to avoid CORS issues
-        // Later, you can implement proper image handling with Azure Blob Storage
         if (!string.IsNullOrEmpty(book.CoverImageUrl) && IsValidImageUrl(book.CoverImageUrl))
         {
             return book.CoverImageUrl;
@@ -494,7 +506,6 @@
 
     private bool IsValidImageUrl(string url)
     {
-        // Basic validation to avoid problematic URLs
         try
         {
             var uri = new Uri(url);

@@ -10,6 +10,7 @@
 @inject IdentityUserAccessor UserAccessor
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
 @attribute [Authorize]
 
@@ -59,7 +60,7 @@
                             </MudCardContent>
                             <MudCardActions>
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                                    @onclick="@(() => DeleteList(list.Id))" />
+                                    @onclick="@(() => ConfirmDeleteList(list.Id, list.Name ?? "Unnamed List"))" />
                             </MudCardActions>
                         </MudCard>
                     </MudItem>
@@ -81,7 +82,7 @@
                     <MudTd DataLabel="Books Count">@context.UserBooks.Count()</MudTd>
                     <MudTd DataLabel="Actions">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
-                            @onclick="() => DeleteList(context.Id)" />
+                            @onclick="@(() => ConfirmDeleteList(context.Id, context.Name ?? "Unnamed List"))" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -128,12 +129,30 @@
         NavigationManager.NavigateTo($"/userlists/{listId}");
     }
 
+    private async Task ConfirmDeleteList(Guid listId, string listName)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+        "Delete List",
+        $"Are you sure you want to delete the list '{listName}'? This action cannot be undone.",
+        yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await DeleteList(listId);
+        }
+    }
+
     private async Task DeleteList(Guid listId)
     {
-        // Implement delete functionality
         var list = userLists.FirstOrDefault(l => l.Id == listId);
         if (list != null)
         {
+            // Also delete all UserBooks associated with this list
+            var associatedUserBooks = await context.UserBooks
+            .Where(ub => ub.UserListId == listId)
+            .ToListAsync();
+
+            context.UserBooks.RemoveRange(associatedUserBooks);
             context.UserLists.Remove(list);
             await context.SaveChangesAsync();
             await LoadUserLists();
