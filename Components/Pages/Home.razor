@@ -119,8 +119,9 @@
                         <div class="carousel-indicators text-center mt-3">
                             @for (int i = 0; i < GetTotalSlices(); i++)
                             {
+                                var sliceIndex = i;
                                 <button type="button" class="carousel-radio-btn @(i == currentPublisherSlice ? "active" : "")"
-                                    @onclick="() => GoToSlice(i)" title="Go to page @(i + 1)">
+                                    @onclick="@(() => GoToSlice(sliceIndex))" title="Go to page @(i + 1)">
                                     <span class="carousel-radio-dot"></span>
                                 </button>
                             }
@@ -566,8 +567,13 @@
     {
         if (sliceIndex >= 0 && sliceIndex < GetTotalSlices())
         {
+            autoRotateTimer?.Dispose();
+
             currentPublisherSlice = sliceIndex;
-            StateHasChanged();
+
+            InvokeAsync(StateHasChanged);
+
+            Task.Delay(6000).ContinueWith(_ => StartAutoRotation());
         }
     }
 
