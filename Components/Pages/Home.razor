@@ -85,49 +85,37 @@
         {
             <MudText Typo="Typo.h4" GutterBottom="true" Class="mb-4 mt-8">Featured Publishers</MudText>
             <MudPaper Elevation="1" Class="pa-4">
-                <div class="publisher-carousel" id="publisher-carousel">
-                    <MudGrid>
-                        @{
-                            var currentPublishers = GetCurrentPublisherSlice();
-                        }
-                        @foreach (var publisherGroup in currentPublishers)
-                        {
-                            <MudItem xs="12" sm="6" md="3">
-                                <MudCard Elevation="0" Class="text-center publisher-card" Style="transition: all 0.5s ease-in-out;">
-                                    <MudCardContent>
-                                        <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Large" Color="Color.Primary"
-                                            Class="mb-2" />
-                                        <MudText Typo="Typo.h6" GutterBottom="true">
-                                            @(string.IsNullOrEmpty(publisherGroup.Key) ? "Independent" : publisherGroup.Key)
-                                        </MudText>
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                            @publisherGroup.Count() book(s)
-                                        </MudText>
-                                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-2"
-                                            @onclick="() => ShowPublisherBooks(publisherGroup.Key)">
-                                            View Books
-                                        </MudButton>
-                                    </MudCardContent>
-                                </MudCard>
-                            </MudItem>
-                        }
-                    </MudGrid>
-
-                    <!-- Carousel indicators -->
-                    @if (featuredPublishers.Count > 4)
-                    {
-                        <div class="carousel-indicators text-center mt-3">
-                            @for (int i = 0; i < GetTotalSlices(); i++)
-                            {
-                                var sliceIndex = i;
-                                <button type="button" class="carousel-radio-btn @(i == currentPublisherSlice ? "active" : "")"
-                                    @onclick="@(() => GoToSlice(sliceIndex))" title="Go to page @(i + 1)">
-                                    <span class="carousel-radio-dot"></span>
-                                </button>
-                            }
+                <MudCarousel Class="mud-width-full" @ref="publisherCarousel" ItemsSource="@GetPublisherSlices()"
+                    @bind-SelectedIndex="selectedCarouselIndex" Style="height:300px;" ShowArrows="true" ShowBullets="true"
+                    EnableSwipeGesture="true" AutoCycle="true" AutoCycleTime="TimeSpan.FromSeconds(5)">
+                    <ItemTemplate>
+                        <div class="d-flex flex-column justify-center" style="height:100%; padding: 16px;">
+                            <MudGrid>
+                                @foreach (var publisherGroup in context)
+                                {
+                                    <MudItem xs="12" sm="6" md="3">
+                                        <MudCard Elevation="2" Class="text-center publisher-card h-100">
+                                            <MudCardContent>
+                                                <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Large"
+                                                    Color="Color.Primary" Class="mb-2" />
+                                                <MudText Typo="Typo.h6" GutterBottom="true">
+                                                    @(string.IsNullOrEmpty(publisherGroup.Key) ? "Independent" : publisherGroup.Key)
+                                                </MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    @publisherGroup.Count() book(s)
+                                                </MudText>
+                                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                                    Class="mt-2" @onclick="() => ShowPublisherBooks(publisherGroup.Key)">
+                                                    View Books
+                                                </MudButton>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
                         </div>
-                    }
-                </div>
+                    </ItemTemplate>
+                </MudCarousel>
             </MudPaper>
         }
 
@@ -352,11 +340,6 @@
 </MudDialog>
 
 <style>
-    .publisher-carousel {
-        position: relative;
-        overflow: hidden;
-    }
-
     .publisher-card {
         animation: slideIn 0.5s ease-in-out;
     }
@@ -371,52 +354,6 @@
             opacity: 1;
             transform: translateX(0);
         }
-    }
-
-    .carousel-indicators {
-        margin-top: 1rem;
-    }
-
-    .carousel-radio-btn {
-        background: none;
-        border: none;
-        padding: 8px;
-        margin: 0 4px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        outline: none;
-    }
-
-    .carousel-radio-btn:hover {
-        transform: scale(1.1);
-    }
-
-    .carousel-radio-dot {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 2px solid #594ae2;
-        background-color: transparent;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .carousel-radio-btn.active .carousel-radio-dot {
-        background-color: #594ae2;
-        box-shadow: 0 0 0 3px rgba(89, 74, 226, 0.2);
-    }
-
-    .carousel-radio-btn.active .carousel-radio-dot::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background-color: white;
     }
 
     .mud-card:hover {
@@ -457,17 +394,18 @@
     private int uniquePublishers = 0;
     private int uniqueAuthors = 0;
 
-    private Timer? autoRotateTimer;
     private int currentPublisherSlice = 0;
     private const int publishersPerSlice = 4;
+
+    // MudCarousel variables
+    private MudCarousel<List<IGrouping<string, Book>>> publisherCarousel = default!;
+    private int selectedCarouselIndex = 0;
 
     protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
         await LoadData();
         await LoadCurrentUser();
-        // Start auto-rotation for featured publishers
-        StartAutoRotation();
     }
 
     private async Task LoadData()
@@ -547,6 +485,22 @@
         selectedPublisher = string.Empty;
     }
 
+    private List<List<IGrouping<string, Book>>> GetPublisherSlices()
+    {
+        if (!featuredPublishers.Any()) return new List<List<IGrouping<string, Book>>>();
+
+        var slices = new List<List<IGrouping<string, Book>>>();
+        for (int i = 0; i < featuredPublishers.Count; i += publishersPerSlice)
+        {
+            var slice = featuredPublishers
+            .Skip(i)
+            .Take(publishersPerSlice)
+            .ToList();
+            slices.Add(slice);
+        }
+        return slices;
+    }
+
     private List<IGrouping<string, Book>> GetCurrentPublisherSlice()
     {
         if (!featuredPublishers.Any()) return new List<IGrouping<string, Book>>();
@@ -561,32 +515,6 @@
     private int GetTotalSlices()
     {
         return (int)Math.Ceiling((double)featuredPublishers.Count / publishersPerSlice);
-    }
-
-    private void GoToSlice(int sliceIndex)
-    {
-        if (sliceIndex >= 0 && sliceIndex < GetTotalSlices())
-        {
-            autoRotateTimer?.Dispose();
-
-            currentPublisherSlice = sliceIndex;
-
-            InvokeAsync(StateHasChanged);
-
-            Task.Delay(6000).ContinueWith(_ => StartAutoRotation());
-        }
-    }
-
-    private void StartAutoRotation()
-    {
-        autoRotateTimer = new Timer(async _ =>
-        {
-            if (featuredPublishers.Any() && GetTotalSlices() > 1)
-            {
-                currentPublisherSlice = (currentPublisherSlice + 1) % GetTotalSlices();
-                await InvokeAsync(StateHasChanged);
-            }
-        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
     private async Task LoadCurrentUser()
@@ -716,7 +644,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        autoRotateTimer?.Dispose();
         await context.DisposeAsync();
     }
 }
