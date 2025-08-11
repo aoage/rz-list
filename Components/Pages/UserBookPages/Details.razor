@@ -6,50 +6,79 @@
 
 <PageTitle>Details</PageTitle>
 
-<h1>Details</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Reading List Entry Details</MudText>
 
-<div>
-    <h2>UserBook</h2>
-    <hr />
-    @if (userbook is null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
-    {
-        <dl class="row">
-            <dt class="col-sm-2">User</dt>
-            <dd class="col-sm-10">
-                <a href="@($"users/details?id={userbook.UserId}")">@userbook.User.Username</a>
-            </dd>
-            <dt class="col-sm-2">Book</dt>
-            <dd class="col-sm-10">
-                <a href="@($"books/details?id={userbook.BookId}")">@userbook.Book.Title</a>
-            </dd>
-            <dt class="col-sm-2">Status</dt>
-            <dd class="col-sm-10">@userbook.Status</dd>
-            <dt class="col-sm-2">Rating</dt>
-            <dd class="col-sm-10">@userbook.Rating</dd>
-            <dt class="col-sm-2">Notes</dt>
-            <dd class="col-sm-10">@userbook.Notes</dd>
-            <dt class="col-sm-2">DateAdded</dt>
-            <dd class="col-sm-10">@userbook.DateAdded</dd>
-            <dt class="col-sm-2">DateStarted</dt>
-            <dd class="col-sm-10">@userbook.DateStarted</dd>
-            <dt class="col-sm-2">DateFinished</dt>
-            <dd class="col-sm-10">@userbook.DateFinished</dd>
-            <dt class="col-sm-2">ProgressPercentage</dt>
-            <dd class="col-sm-10">@userbook.ProgressPercentage</dd>
-            <dt class="col-sm-2">IsFavorite</dt>
-            <dd class="col-sm-10">@userbook.IsFavorite</dd>
-        </dl>
-        <div>
-            <a href="@($"/userbooks/edit?id={userbook.Id}")">Edit</a> |
-            <a href="@($"/userbooks/delete?id={userbook.Id}")">Delete</a> |
-            <a href="@($"/userbooks")">Back to List</a>
-        </div>
-    }
-</div>
+    <MudCard Class="mb-4">
+        <MudCardContent>
+            @if (userbook is null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <MudText>Loading...</MudText>
+            }
+            else
+            {
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="User" Value="@userbook.User.Username" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="User Email" Value="@userbook.User.Email" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Book Title" Value="@userbook.Book.Title" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Book Author" Value="@userbook.Book.Author" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Reading Status" Value="@userbook.Status.ToString()" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Rating" Value="@(userbook.Rating?.ToString() ?? "Not rated")"
+                            ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Progress" Value="@(userbook.ProgressPercentage?.ToString("F1") + "%" ?? "0%")"
+                            ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Is Favorite" Value="@(userbook.IsFavorite ? "Yes" : "No")" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Label="Notes" Value="@(userbook.Notes ?? "No notes")" ReadOnly="true" Lines="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Date Added" Value="@userbook.DateAdded.ToString("yyyy-MM-dd HH:mm:ss")"
+                            ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Date Started"
+                            Value="@(userbook.DateStarted?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Not started")"
+                            ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Date Finished"
+                            Value="@(userbook.DateFinished?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Not finished")"
+                            ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(userbook is null)"
+                Href="@(userbook is not null ? $"/userbooks/edit?id={userbook.Id}" : null)" Class="ml-auto">
+                Edit
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@(userbook is null)"
+                Href="@(userbook is not null ? $"/userbooks/delete?id={userbook.Id}" : null)" Class="ml-2">
+                Delete
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+
+    <MudLink Href="/userbooks" Class="mt-4">Back to List</MudLink>
+</MudContainer>
 
 @code {
     private UserBook? userbook;
@@ -61,9 +90,9 @@
     {
         using var context = DbFactory.CreateDbContext();
         userbook = await context.UserBooks
-            .Include(ub => ub.User)
-            .Include(ub => ub.Book)
-            .FirstOrDefaultAsync(m => m.Id == Id);
+        .Include(ub => ub.User)
+        .Include(ub => ub.Book)
+        .FirstOrDefaultAsync(m => m.Id == Id);
 
         if (userbook is null)
         {

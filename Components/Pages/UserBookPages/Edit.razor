@@ -1,106 +1,127 @@
 @page "/userbooks/edit"
 @using Microsoft.EntityFrameworkCore
 @using RzList.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
 @inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Edit Reading List Entry</PageTitle>
 
-<h1>Edit Reading List Entry</h1>
-@if (UserBook is null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-6">
-            <EditForm method="post" Model="UserBook" OnValidSubmit="UpdateUserBook" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Edit Reading List Entry</MudText>
 
-                <input type="hidden" name="UserBook.Id" value="@UserBook.Id" />
+    @if (UserBook is null)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText>Loading...</MudText>
+    }
+    else
+    {
+        <EditForm Model="@UserBook" OnValidSubmit="OnValidSubmit" Class="mb-4">
+            <DataAnnotationsValidator />
+            <MudCard>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudTextField Label="User" Value="@($"{UserBook.User?.Username} ({UserBook.User?.Email})")" 
+                                ReadOnly="true" HelperText="Cannot be changed" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudTextField Label="Book" Value="@($"{UserBook.Book?.Title} by {UserBook.Book?.Author}")" 
+                                ReadOnly="true" HelperText="Cannot be changed" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudSelect T="ReadingStatus" Label="Reading Status" 
+                                HelperText="@GetHelperText(nameof(UserBook.Status), "Current reading status")"
+                                @bind-Value="UserBook.Status" For="@(() => UserBook.Status)">
+                                <MudSelectItem Value="@ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                                <MudSelectItem Value="@ReadingStatus.CurrentlyReading">Currently Reading</MudSelectItem>
+                                <MudSelectItem Value="@ReadingStatus.Finished">Finished</MudSelectItem>
+                                <MudSelectItem Value="@ReadingStatus.DNF">Did Not Finish</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudNumericField T="decimal?" Label="Rating (0-5)" 
+                                HelperText="@GetHelperText(nameof(UserBook.Rating), "Rate the book from 0 to 5")"
+                                @bind-Value="UserBook.Rating" For="@(() => UserBook.Rating)" 
+                                Min="0" Max="5" Step="0.1M" />
+                        </MudItem>
+                        
+                        <MudItem xs="12">
+                            <MudTextField Label="Notes" 
+                                HelperText="@GetHelperText(nameof(UserBook.Notes), "Personal notes about the book")"
+                                @bind-Value="UserBook.Notes" For="@(() => UserBook.Notes)" Lines="3" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudNumericField T="decimal?" Label="Progress (%)" 
+                                HelperText="@GetHelperText(nameof(UserBook.ProgressPercentage), "Reading progress percentage")"
+                                @bind-Value="UserBook.ProgressPercentage" For="@(() => UserBook.ProgressPercentage)" 
+                                Min="0" Max="100" Step="0.1M" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudDatePicker Label="Date Finished" 
+                                HelperText="@GetHelperText(nameof(UserBook.DateFinished), "When you finished reading")"
+                                @bind-Date="UserBook.DateFinished" For="@(() => UserBook.DateFinished)" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudTextField Label="Date Added" Value="@UserBook.DateAdded.ToString("yyyy-MM-dd HH:mm:ss")" 
+                                ReadOnly="true" HelperText="When you added this book to your list" />
+                        </MudItem>
+                        
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCheckBox T="bool" Label="Mark as Favorite" 
+                                @bind-Value="UserBook.IsFavorite" For="@(() => UserBook.IsFavorite)" 
+                                Color="Color.Primary" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                        Class="ml-auto">Update Entry</MudButton>
+                    <MudButton OnClick="DeleteUserBook" Variant="Variant.Filled" Color="Color.Error"
+                        Class="ml-2">Delete Entry</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
 
-                <div class="mb-3">
-                    <label class="form-label">User:</label>
-                    <p class="form-control-plaintext">@UserBook.User?.Username (@UserBook.User?.Email)</p>
-                </div>
+        @if (error)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-4">
+                An error occurred while updating the reading list entry. Please try again.
+            </MudAlert>
+        }
 
-                <div class="mb-3">
-                    <label class="form-label">Book:</label>
-                    <p class="form-control-plaintext">@UserBook.Book?.Title by @UserBook.Book?.Author</p>
-                </div>
-
-                <div class="mb-3">
-                    <label for="status" class="form-label">Reading Status:</label>
-                    <InputSelect id="status" @bind-Value="UserBook.Status" class="form-control">
-                        <option value="@ReadingStatus.WantToRead">Want to Read</option>
-                        <option value="@ReadingStatus.CurrentlyReading">Currently Reading</option>
-                        <option value="@ReadingStatus.Finished">Finished</option>
-                        <option value="@ReadingStatus.DNF">Did Not Finish</option>
-                    </InputSelect>
-                    <ValidationMessage For="() => UserBook.Status" class="text-danger" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="rating" class="form-label">Rating (0-5):</label>
-                    <input type="number" id="rating" value="@(UserBook.Rating?.ToString() ?? "")"
-                        @onchange="@((e) => UserBook.Rating = string.IsNullOrEmpty(e.Value?.ToString()) ? null : long.Parse(e.Value?.ToString() ?? ""))"
-                        class="form-control" />
-                    <ValidationMessage For="() => UserBook.Rating" class="text-danger" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="notes" class="form-label">Notes:</label>
-                    <InputTextArea id="notes" @bind-Value="UserBook.Notes" class="form-control" rows="3" />
-                    <ValidationMessage For="() => UserBook.Notes" class="text-danger" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="progresspercentage" class="form-label">Progress (%):</label>
-                    <input type="number" id="progresspercentage" value="@(UserBook.ProgressPercentage?.ToString() ?? "")"
-                        @onchange="@((e) => UserBook.ProgressPercentage = string.IsNullOrEmpty(e.Value?.ToString()) ? null : decimal.Parse(e.Value?.ToString() ?? ""))"
-                        class="form-control" min="0" max="100" step="0.1" />
-                    <ValidationMessage For="() => UserBook.ProgressPercentage" class="text-danger" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="datefinished" class="form-label">Date Finished:</label>
-                    <input type="date" id="datefinished" value="@(UserBook.DateFinished?.ToString("yyyy-MM-dd") ?? "")"
-                        @onchange="@((e) => UserBook.DateFinished = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value?.ToString() ?? string.Empty))"
-                        class="form-control" />
-                    <ValidationMessage For="() => UserBook.DateFinished" class="text-danger" />
-                </div>
-
-                <div class="mb-3 form-check">
-                    <InputCheckbox id="isfavorite" @bind-Value="UserBook.IsFavorite" class="form-check-input" />
-                    <label for="isfavorite" class="form-check-label">Mark as Favorite</label>
-                    <ValidationMessage For="() => UserBook.IsFavorite" class="text-danger" />
-                </div>
-
-                <button type="submit" class="btn btn-primary">Update</button>
-                <button @onclick="DeleteUserBook" class="btn btn-danger">Delete</button>
-            </EditForm>
-        </div>
-    </div>
-}
-
-<div>
-    <a href="@((UserBook is not null ? $"/userbooks/details?id={UserBook.Id}" : "#"))">View Details</a>
-    <a href="/userbooks">Back to List</a>
-</div>
+        <MudLink Href="@($"/userbooks/details?id={UserBook.Id}")" Class="mt-4 mr-2">View Details</MudLink>
+        <MudLink Href="/userbooks" Class="mt-4">Back to List</MudLink>
+    }
+</MudContainer>
 
 @code {
     [SupplyParameterFromQuery]
     public Guid Id { get; set; }
 
-    [SupplyParameterFromForm]
     public UserBook? UserBook { get; set; }
+    bool error = false;
+
+    private string GetHelperText(string propertyName, string baseText)
+    {
+        var property = typeof(UserBook).GetProperty(propertyName);
+        var isRequired = property?.GetCustomAttribute<RequiredAttribute>() != null;
+
+        return isRequired ? $"{baseText} (required)" : baseText;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        UserBook ??= await context.UserBooks
+        UserBook = await context.UserBooks
         .Include(ub => ub.User)
         .Include(ub => ub.Book)
         .FirstOrDefaultAsync(m => m.Id == Id);
@@ -111,14 +132,17 @@ else
         }
     }
 
-    public async Task UpdateUserBook()
+    public async Task OnValidSubmit(EditContext context)
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Attach(UserBook!).State = EntityState.Modified;
-
         try
         {
-            await context.SaveChangesAsync();
+            using var dbContext = DbFactory.CreateDbContext();
+            dbContext.Attach(UserBook!).State = EntityState.Modified;
+
+            await dbContext.SaveChangesAsync();
+            error = false;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/userbooks");
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -128,11 +152,15 @@ else
             }
             else
             {
-                throw;
+                error = true;
+                StateHasChanged();
             }
         }
-
-        NavigationManager.NavigateTo("/userbooks");
+        catch (Exception)
+        {
+            error = true;
+            StateHasChanged();
+        }
     }
 
     bool UserBookExists(Guid id)
