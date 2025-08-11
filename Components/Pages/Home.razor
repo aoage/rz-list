@@ -53,8 +53,7 @@
                                 <MudItem xs="12" sm="6" md="4" lg="3">
                                     <MudCard Class="cursor-pointer h-100" Elevation="2" Style="transition: transform 0.2s ease-in-out;"
                                         onmouseover="this.style.transform='translateY(-4px)'"
-                                        onmouseout="this.style.transform='translateY(0)'"
-                                        @onclick="() => OpenBookModal(book)">
+                                        onmouseout="this.style.transform='translateY(0)'" @onclick="() => OpenBookModal(book)">
                                         <MudCardMedia Image="@GetBookCoverImage(book)" Height="200"
                                             Style="background-color: #f5f5f5;" />
                                         <MudCardContent>
@@ -283,24 +282,32 @@
             @if (currentUser != null)
             {
                 <MudText Typo="Typo.h6" GutterBottom="true">Select a Reading List:</MudText>
-                
+
                 @if (userLists.Any())
                 {
-                    <MudSelect T="UserList" @bind-Value="selectedUserList" Label="Choose Reading List"
-                               Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-                        @foreach (var list in userLists)
-                        {
-                            <MudSelectItem Value="@list">@list.Name (@list.UserBooks.Count books)</MudSelectItem>
-                        }
-                    </MudSelect>
-                    
+                    <MudAutocomplete T="UserList" @bind-Value="selectedUserList" Label="Choose Reading List"
+                        Variant="Variant.Outlined" SearchFunc="@SearchUserLists"
+                        ToStringFunc="@(list => list?.Name + $" ({list?.UserBooks.Count} books)")" ResetValueOnEmptyText="false"
+                        CoerceText="false" CoerceValue="false" AdornmentIcon="@Icons.Material.Filled.Search"
+                        AdornmentColor="Color.Primary" MaxItems="null" Dense="true">
+                        <ItemTemplate Context="listItem">
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.List" Size="Size.Small" Class="mr-2" />
+                                <div>
+                                    <MudText Typo="Typo.body1">@listItem.Name</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@listItem.UserBooks.Count book(s)</MudText>
+                                </div>
+                            </div>
+                        </ItemTemplate>
+                    </MudAutocomplete>
+
                     @if (addToListError)
                     {
                         <MudAlert Severity="Severity.Error" Class="mt-2">
                             @addToListErrorMessage
                         </MudAlert>
                     }
-                    
+
                     @if (addToListSuccess)
                     {
                         <MudAlert Severity="Severity.Success" Class="mt-2">
@@ -311,7 +318,7 @@
                 else
                 {
                     <MudAlert Severity="Severity.Info">
-                        You don't have any reading lists yet. 
+                        You don't have any reading lists yet.
                         <MudLink Href="/userlists/create">Create one here</MudLink>.
                     </MudAlert>
                 }
@@ -328,7 +335,7 @@
         @if (currentUser != null && userLists.Any() && selectedUserList != null)
         {
             <MudButton OnClick="AddBookToSelectedList" Variant="Variant.Filled" Color="Color.Primary"
-                       Disabled="addingToList">
+                Disabled="addingToList">
                 @if (addingToList)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -560,14 +567,28 @@
         try
         {
             userLists = await context.UserLists
-                .Include(ul => ul.UserBooks)
-                .Where(ul => ul.UserId == currentUser.Id)
-                .ToListAsync();
+            .Include(ul => ul.UserBooks)
+            .Where(ul => ul.UserId == currentUser.Id)
+            .ToListAsync();
         }
         catch
         {
             userLists = new List<UserList>();
         }
+    }
+
+    private Task<IEnumerable<UserList>> SearchUserLists(string value, CancellationToken cancellationToken)
+    {
+        // Return all user lists if no search value or if cancelled
+        if (string.IsNullOrWhiteSpace(value) || cancellationToken.IsCancellationRequested)
+            return Task.FromResult(userLists.AsEnumerable());
+
+        // Filter user lists based on the search term
+        var filteredLists = userLists.Where(list =>
+        list.Name != null &&
+        list.Name.Contains(value, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(filteredLists);
     }
 
     private void OpenBookModal(Book book)
@@ -604,9 +625,9 @@
         {
             // Check if book is already in this specific list
             var existingUserBook = await context.UserBooks
-                .FirstOrDefaultAsync(ub => ub.UserId == currentUser.Id &&
-                                         ub.BookId == selectedBookForModal.Id &&
-                                         ub.UserListId == selectedUserList.Id);
+            .FirstOrDefaultAsync(ub => ub.UserId == currentUser.Id &&
+            ub.BookId == selectedBookForModal.Id &&
+            ub.UserListId == selectedUserList.Id);
 
             if (existingUserBook == null)
             {
@@ -624,7 +645,7 @@
                 await context.SaveChangesAsync();
 
                 addToListSuccess = true;
-                
+
                 // Reload user lists to update counts
                 await LoadUserLists();
             }
