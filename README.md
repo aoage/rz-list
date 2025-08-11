@@ -2,6 +2,12 @@
 
 **rz-list** is an ASP.NET Core Blazor web application for tracking your reading list of novels. Easily add, update, and manage the books you want to read, are currently reading, or have finished.
 
+
+
+https://github.com/user-attachments/assets/9b7baf8a-8374-403c-86de-b0cb0f188e62
+
+
+
 ## Requirements
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download)
