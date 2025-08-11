@@ -119,11 +119,10 @@
                         <div class="carousel-indicators text-center mt-3">
                             @for (int i = 0; i < GetTotalSlices(); i++)
                             {
-                                <MudButton Variant="@(i == currentPublisherSlice ? Variant.Filled : Variant.Outlined)"
-                                    Color="Color.Primary" Size="Size.Small"
-                                    Style="width: 12px; height: 12px; min-width: 12px; border-radius: 50%; margin: 0 4px;"
-                                    @onclick="() => GoToSlice(i)">
-                                </MudButton>
+                                <button type="button" class="carousel-radio-btn @(i == currentPublisherSlice ? "active" : "")"
+                                    @onclick="() => GoToSlice(i)" title="Go to page @(i + 1)">
+                                    <span class="carousel-radio-dot"></span>
+                                </button>
                             }
                         </div>
                     }
@@ -375,6 +374,48 @@
 
     .carousel-indicators {
         margin-top: 1rem;
+    }
+
+    .carousel-radio-btn {
+        background: none;
+        border: none;
+        padding: 8px;
+        margin: 0 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        outline: none;
+    }
+
+    .carousel-radio-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .carousel-radio-dot {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid #594ae2;
+        background-color: transparent;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .carousel-radio-btn.active .carousel-radio-dot {
+        background-color: #594ae2;
+        box-shadow: 0 0 0 3px rgba(89, 74, 226, 0.2);
+    }
+
+    .carousel-radio-btn.active .carousel-radio-dot::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: white;
     }
 
     .mud-card:hover {
