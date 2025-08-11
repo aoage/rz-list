@@ -1,0 +1,510 @@
+@page "/userlists/{id:guid}"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.EntityFrameworkCore
+@using Models.Entities
+@using Data
+@using rz_list.Components.Account
+@implements IAsyncDisposable
+@inject IDbContextFactory<Data.RzListDbContext> DbFactory
+@inject IdentityUserAccessor UserAccessor
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+<PageTitle>@(userList?.Name ?? "List Details")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (userList == null)
+    {
+        <MudAlert Severity="Severity.Error">
+            List not found or you don't have permission to view it.
+        </MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.h3" GutterBottom="true">@userList.Name</MudText>
+
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" md="8">
+                <MudAutocomplete T="Book" Label="Search and Add Books" @bind-Value="selectedBook" SearchFunc="@SearchBooks"
+                    ToStringFunc="@(book => book?.Title)" ResetValueOnEmptyText="true" CoerceText="false"
+                    AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary"
+                    Placeholder="Start typing a book title, author, or genre..." DebounceInterval="300" MinCharacters="2"
+                    MaxItems="15" ShowProgressIndicator="true">
+                    <ItemTemplate Context="book">
+                        <div style="display: flex; flex-direction: column; padding: 8px 0;">
+                            <MudText Typo="Typo.body1" Style="font-weight: 500;">@book.Title</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">by @book.Author</MudText>
+                            @if (!string.IsNullOrEmpty(book.Genre))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary"
+                                    Style="margin-top: 4px; width: fit-content;">@book.Genre</MudChip>
+                            }
+                            @if (book.PublishedDate.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Tertiary">Published: @book.PublishedDate.Value.Year
+                                </MudText>
+                            }
+                        </div>
+                    </ItemTemplate>
+                    <NoItemsTemplate>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-4">
+                            No books found. Try a different search term.
+                        </MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex gap-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                    FullWidth="true" OnClick="AddBookToList" Disabled="@(selectedBook == null)">
+                    Add to List
+                </MudButton>
+                <MudToggleIconButton @bind-Toggled="@isCardView" 
+                                     Icon="@Icons.Material.Filled.TableRows" 
+                                     ToggledIcon="@Icons.Material.Filled.GridView"
+                                     Title="Toggle view mode" 
+                                     ToggledTitle="Toggle view mode"
+                                     Color="Color.Primary" />
+            </MudItem>
+        </MudGrid>
+
+        @if (selectedBook != null)
+        {
+            <MudCard Class="mb-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" GutterBottom="true">Selected Book</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="8">
+                            <MudText Typo="Typo.h5">@selectedBook.Title</MudText>
+                            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">by @selectedBook.Author</MudText>
+                            @if (!string.IsNullOrEmpty(selectedBook.Description))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-2">@selectedBook.Description</MudText>
+                            }
+                            <div class="d-flex gap-2 mt-2">
+                                @if (!string.IsNullOrEmpty(selectedBook.Genre))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@selectedBook.Genre</MudChip>
+                                }
+                                @if (selectedBook.PublishedDate.HasValue)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary">
+                                        @selectedBook.PublishedDate.Value.Year</MudChip>
+                                }
+                                @if (!string.IsNullOrEmpty(selectedBook.ISBN))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Tertiary">ISBN: @selectedBook.ISBN</MudChip>
+                                }
+                            </div>
+                        </MudItem>
+                        @if (!string.IsNullOrEmpty(selectedBook.CoverImageUrl))
+                        {
+                            <MudItem xs="12" sm="4">
+                                <MudImage Src="@selectedBook.CoverImageUrl" 
+                                         Alt="@selectedBook.Title" 
+                                         Width="150" Height="200"
+                                         ObjectFit="ObjectFit.Cover" 
+                                         Class="rounded"
+                                         Style="object-fit: cover; background-color: #f5f5f5;"
+                                         ErrorSrc="/images/book-placeholder.svg" />
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem xs="12" sm="4">
+                                <MudImage Src="/images/book-placeholder.svg" 
+                                         Alt="@selectedBook.Title" 
+                                         Width="150" Height="200"
+                                         ObjectFit="ObjectFit.Cover" 
+                                         Class="rounded"
+                                         Style="object-fit: cover; background-color: #f5f5f5;" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="@(() => selectedBook = null)">
+                        Clear Selection
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        }
+
+        @if (!listBooks.Any())
+        {
+            <MudAlert Severity="Severity.Info">
+                This list is empty. Use the search above to add books to your list.
+            </MudAlert>
+        }
+        else
+        {
+            @if (isCardView)
+            {
+                <MudGrid>
+                    @foreach (var userBook in listBooks)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard Class="h-100">
+                                <MudCardMedia Image="@GetBookCoverImage(userBook.Book)" 
+                                             Height="250" 
+                                             Style="background-color: #f5f5f5; object-fit: cover;" />
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Style="min-height: 48px; line-height: 1.2;">@userBook.Book.Title</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">by @userBook.Book.Author</MudText>
+                                    @if (!string.IsNullOrEmpty(userBook.Book.Genre))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Class="mt-2">@userBook.Book.Genre</MudChip>
+                                    }
+                                    
+                                    <div class="mt-3">
+                                        <MudText Typo="Typo.caption">Status:</MudText>
+                                        <MudSelect T="ReadingStatus" 
+                                                  Value="userBook.Status" 
+                                                  ValueChanged="@((ReadingStatus newStatus) => UpdateBookStatus(userBook, newStatus))"
+                                                  Dense="true" Margin="Margin.Dense">
+                                            <MudSelectItem T="ReadingStatus" Value="ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                                            <MudSelectItem T="ReadingStatus" Value="ReadingStatus.CurrentlyReading">Currently Reading</MudSelectItem>
+                                            <MudSelectItem T="ReadingStatus" Value="ReadingStatus.Finished">Finished</MudSelectItem>
+                                            <MudSelectItem T="ReadingStatus" Value="ReadingStatus.DNF">Did Not Finish</MudSelectItem>
+                                        </MudSelect>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <MudText Typo="Typo.caption">Progress:</MudText>
+                                        <MudNumericField T="decimal?" 
+                                                       Value="userBook.ProgressPercentage" 
+                                                       ValueChanged="@((decimal? newProgress) => UpdateProgress(userBook, newProgress))"
+                                                       Suffix="%" Min="0" Max="100" HideSpinButtons="true" Dense="true" />
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <MudText Typo="Typo.caption">Rating:</MudText>
+                                        <MudRating SelectedValue="@(userBook.Rating.HasValue ? (int)userBook.Rating.Value : 0)"
+                                                  SelectedValueChanged="@((int newRating) => UpdateRating(userBook, newRating))"
+                                                  MaxValue="5" Size="Size.Small" />
+                                    </div>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                 Color="Color.Error" 
+                                                 Size="Size.Small"
+                                                 @onclick="() => RemoveBookFromList(userBook.Id)" />
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudTable Items="@listBooks" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh Style="width: 80px;">Cover</MudTh>
+                        <MudTh>Book</MudTh>
+                        <MudTh>Author</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Progress</MudTh>
+                        <MudTh>Rating</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Cover">
+                            <MudImage Src="@GetBookCoverImage(context.Book)" 
+                                     Alt="@context.Book.Title"
+                                     Width="50" Height="70" 
+                                     ObjectFit="ObjectFit.Cover" 
+                                     Class="rounded"
+                                     Style="object-fit: cover; background-color: #f5f5f5;"
+                                     ErrorSrc="/images/book-placeholder.svg" />
+                        </MudTd>
+                        <MudTd DataLabel="Book">
+                            <div>
+                                <MudText Typo="Typo.body1">@context.Book.Title</MudText>
+                                @if (!string.IsNullOrEmpty(context.Book.Genre))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@context.Book.Genre</MudChip>
+                                }
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Author">@context.Book.Author</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudSelect T="ReadingStatus" 
+                                      Value="context.Status" 
+                                      ValueChanged="@((ReadingStatus newStatus) => UpdateBookStatus(context, newStatus))"
+                                      Dense="true">
+                                <MudSelectItem T="ReadingStatus" Value="ReadingStatus.WantToRead">Want to Read</MudSelectItem>
+                                <MudSelectItem T="ReadingStatus" Value="ReadingStatus.CurrentlyReading">Currently Reading
+                                </MudSelectItem>
+                                <MudSelectItem T="ReadingStatus" Value="ReadingStatus.Finished">Finished</MudSelectItem>
+                                <MudSelectItem T="ReadingStatus" Value="ReadingStatus.DNF">Did Not Finish</MudSelectItem>
+                            </MudSelect>
+                        </MudTd>
+                        <MudTd DataLabel="Progress">
+                            <div style="width: 100px;">
+                                <MudNumericField T="decimal?" 
+                                               Value="context.ProgressPercentage" 
+                                               ValueChanged="@((decimal? newProgress) => UpdateProgress(context, newProgress))"
+                                               Suffix="%" 
+                                               Min="0" Max="100" 
+                                               HideSpinButtons="true" 
+                                               Dense="true" />
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Rating">
+                            <MudRating SelectedValue="@(context.Rating.HasValue ? (int)context.Rating.Value : 0)"
+                                SelectedValueChanged="@((int newRating) => UpdateRating(context, newRating))"
+                                MaxValue="5" />
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                @onclick="() => RemoveBookFromList(context.Id)" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        }
+
+        <MudLink Href="/userlists" Class="mt-4">Back to My Lists</MudLink>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private RzListDbContext context = default!;
+    private UserList? userList;
+    private List<UserBook> listBooks = new();
+    private Book? selectedBook;
+    private bool loading = true;
+    private bool isCardView = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = DbFactory.CreateDbContext();
+        await LoadListDetails();
+    }
+
+    private async Task LoadListDetails()
+    {
+        try
+        {
+            loading = true;
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var currentUser = await UserAccessor.GetRequiredUserAsync(httpContext);
+
+                userList = await context.UserLists
+                .FirstOrDefaultAsync(ul => ul.Id == Id && ul.UserId == currentUser.Id);
+
+                if (userList != null)
+                {
+                    listBooks = await context.UserBooks
+                    .Include(ub => ub.Book)
+                    .Where(ub => ub.UserId == currentUser.Id && ub.UserListId == userList.Id)
+                    .ToListAsync();
+                }
+            }
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<IEnumerable<Book>> SearchBooks(string value, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 2)
+            return new List<Book>();
+
+        // Convert search term to lowercase for case-insensitive search
+        var searchTerm = value.ToLowerInvariant();
+        var searchWords = searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        try
+        {
+            var books = await context.Books
+            .Where(b =>
+            // Exact title match (highest priority)
+            b.Title.ToLower().Contains(searchTerm) ||
+            // Exact author match
+            b.Author.ToLower().Contains(searchTerm) ||
+            // Genre match
+            (b.Genre != null && b.Genre.ToLower().Contains(searchTerm)) ||
+            // ISBN match
+            (b.ISBN != null && b.ISBN.ToLower().Contains(searchTerm)) ||
+            // Publisher match
+            (b.Publisher != null && b.Publisher.ToLower().Contains(searchTerm)) ||
+            // Multiple word search - all words must be found somewhere
+            (searchWords.Length > 1 && searchWords.All(word =>
+            b.Title.ToLower().Contains(word) ||
+            b.Author.ToLower().Contains(word) ||
+            (b.Genre != null && b.Genre.ToLower().Contains(word)) ||
+            (b.Description != null && b.Description.ToLower().Contains(word))
+            ))
+            )
+            .OrderBy(b =>
+            // Prioritize exact title matches
+            b.Title.ToLower() == searchTerm ? 0 :
+            b.Title.ToLower().StartsWith(searchTerm) ? 1 :
+            b.Author.ToLower() == searchTerm ? 2 :
+            b.Author.ToLower().StartsWith(searchTerm) ? 3 :
+            4
+            )
+            .ThenBy(b => b.Title)
+            .Take(15)
+            .ToListAsync(cancellationToken);
+
+            return books;
+        }
+        catch (OperationCanceledException)
+        {
+            return new List<Book>();
+        }
+        catch (Exception)
+        {
+            // Log error in production
+            return new List<Book>();
+        }
+    }
+
+    private async Task AddBookToList()
+    {
+        if (selectedBook == null || userList == null) return;
+
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var currentUser = await UserAccessor.GetRequiredUserAsync(httpContext);
+
+                // Check if book is already in this specific list
+                var existingUserBook = await context.UserBooks
+                .FirstOrDefaultAsync(ub => ub.UserId == currentUser.Id &&
+                ub.BookId == selectedBook.Id &&
+                ub.UserListId == userList.Id);
+
+                if (existingUserBook == null)
+                {
+                    // Create new UserBook entry for this specific list
+                    var userBook = new UserBook
+                    {
+                        UserId = currentUser.Id,
+                        BookId = selectedBook.Id,
+                        UserListId = userList.Id,
+                        Status = ReadingStatus.WantToRead,
+                        DateAdded = DateTime.UtcNow
+                    };
+
+                    context.UserBooks.Add(userBook);
+                    await context.SaveChangesAsync();
+
+                    // Clear selection and reload
+                    selectedBook = null;
+                    await LoadListDetails();
+                }
+                else
+                {
+                    // Book is already in this list - could show a message
+                    // For now, just clear the selection
+                    selectedBook = null;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Handle error - could show a snackbar or alert
+        }
+    }
+
+    private async Task UpdateBookStatus(UserBook userBook, ReadingStatus newStatus)
+    {
+        userBook.Status = newStatus;
+
+        if (newStatus == ReadingStatus.CurrentlyReading && userBook.DateStarted == null)
+        {
+            userBook.DateStarted = DateTime.UtcNow;
+        }
+        else if (newStatus == ReadingStatus.Finished && userBook.DateFinished == null)
+        {
+            userBook.DateFinished = DateTime.UtcNow;
+            userBook.ProgressPercentage = 100;
+        }
+
+        await context.SaveChangesAsync();
+        StateHasChanged();
+    }
+
+    private async Task UpdateProgress(UserBook userBook, decimal? newProgress)
+    {
+        userBook.ProgressPercentage = newProgress;
+
+        if (newProgress >= 100)
+        {
+            userBook.Status = ReadingStatus.Finished;
+            userBook.DateFinished = DateTime.UtcNow;
+        }
+        else if (newProgress > 0 && userBook.Status == ReadingStatus.WantToRead)
+        {
+            userBook.Status = ReadingStatus.CurrentlyReading;
+            userBook.DateStarted = DateTime.UtcNow;
+        }
+
+        await context.SaveChangesAsync();
+        StateHasChanged();
+    }
+
+    private async Task UpdateRating(UserBook userBook, int newRating)
+    {
+        userBook.Rating = newRating;
+        await context.SaveChangesAsync();
+        StateHasChanged();
+    }
+
+    private async Task RemoveBookFromList(Guid userBookId)
+    {
+        var userBook = listBooks.FirstOrDefault(lb => lb.Id == userBookId);
+        if (userBook != null)
+        {
+            context.UserBooks.Remove(userBook);
+            await context.SaveChangesAsync();
+            await LoadListDetails();
+        }
+    }
+
+    private string GetBookCoverImage(Book book)
+    {
+        // Always return the placeholder for now to avoid CORS issues
+        // Later, you can implement proper image handling with Azure Blob Storage
+        if (!string.IsNullOrEmpty(book.CoverImageUrl) && IsValidImageUrl(book.CoverImageUrl))
+        {
+            return book.CoverImageUrl;
+        }
+        
+        return "/images/book-placeholder.svg";
+    }
+
+    private bool IsValidImageUrl(string url)
+    {
+        // Basic validation to avoid problematic URLs
+        try
+        {
+            var uri = new Uri(url);
+            return uri.Scheme == "http" || uri.Scheme == "https";
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

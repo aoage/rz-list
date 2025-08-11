@@ -9,6 +9,7 @@ namespace Models.Entities
         // Foreign Keys
         public Guid UserId { get; set; }
         public Guid BookId { get; set; }
+        public Guid? UserListId { get; set; }
 
         // User-specific data
         public ReadingStatus Status { get; set; } = ReadingStatus.WantToRead;
@@ -33,6 +34,7 @@ namespace Models.Entities
         // Navigation properties
         public virtual User User { get; set; } = null!;
         public virtual Book Book { get; set; } = null!;
+        public virtual UserList? UserList { get; set; }
 
         // Computed property for easy progress display
         public string ProgressDisplay => ProgressPercentage.HasValue

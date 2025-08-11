@@ -3,6 +3,7 @@ using System;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace rzlist.Migrations
 {
     [DbContext(typeof(RzListDbContext))]
-    partial class RzListDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250811090448_UserListIdCreate")]
+    partial class UserListIdCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
@@ -401,15 +404,13 @@ namespace rzlist.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Models.Entities.UserList", "UserList")
+                    b.HasOne("Models.Entities.UserList", null)
                         .WithMany("UserBooks")
                         .HasForeignKey("UserListId");
 
                     b.Navigation("Book");
 
                     b.Navigation("User");
-
-                    b.Navigation("UserList");
                 });
 
             modelBuilder.Entity("Models.Entities.UserList", b =>

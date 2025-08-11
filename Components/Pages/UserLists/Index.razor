@@ -1,32 +1,143 @@
 @page "/userlists"
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components
+@using Microsoft.EntityFrameworkCore
 @using Models.Entities
 @using Data
+@using rz_list.Components.Account
 @implements IAsyncDisposable
 @inject IDbContextFactory<Data.RzListDbContext> DbFactory
+@inject IdentityUserAccessor UserAccessor
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
 
 @attribute [Authorize]
 
-<PageTitle>Index</PageTitle>
+<PageTitle>My Lists</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
     <MudText Typo="Typo.h3" GutterBottom="true">My Lists</MudText>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="users/create"
-        Class="mb-4">
-        Create New List
-    </MudButton>
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                Href="userlists/create">
+                Create New List
+            </MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6" Class="d-flex justify-end align-center">
+            <MudToggleIconButton @bind-Toggled="@isCardView" Icon="@Icons.Material.Filled.TableRows"
+                ToggledIcon="@Icons.Material.Filled.GridView" Title="Toggle view mode"
+                ToggledTitle="Toggle view mode" />
+        </MudItem>
+    </MudGrid>
 
+    @if (loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (userLists == null || !userLists.Any())
+    {
+        <MudAlert Severity="Severity.Info">
+            You haven't created any lists yet. Click "Create New List" to get started!
+        </MudAlert>
+    }
+    else
+    {
+        @if (isCardView)
+        {
+            <MudGrid>
+                @foreach (var list in userLists)
+                {
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudCard Class="cursor-pointer" @onclick="() => NavigateToList(list.Id)">
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6">@list.Name</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    @list.UserBooks.Count() book(s)
+                                </MudText>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                    @onclick="@(() => DeleteList(list.Id))" />
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+        else
+        {
+            <MudTable Items="@userLists" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading">
+                <HeaderContent>
+                    <MudTh>List Name</MudTh>
+                    <MudTh>Books Count</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="List Name">
+                        <MudLink Href="@($"userlists/{context.Id}")">@context.Name</MudLink>
+                    </MudTd>
+                    <MudTd DataLabel="Books Count">@context.UserBooks.Count()</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                            @onclick="() => DeleteList(context.Id)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    }
 </MudContainer>
 
 @code {
     private RzListDbContext context = default!;
+    private List<UserList> userLists = new();
+    private bool loading = true;
+    private bool isCardView = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
+        await LoadUserLists();
+    }
+
+    private async Task LoadUserLists()
+    {
+        try
+        {
+            loading = true;
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var currentUser = await UserAccessor.GetRequiredUserAsync(httpContext);
+                userLists = await context.UserLists
+                .Include(ul => ul.UserBooks)
+                .Where(ul => ul.UserId == currentUser.Id)
+                .ToListAsync();
+            }
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToList(Guid listId)
+    {
+        NavigationManager.NavigateTo($"/userlists/{listId}");
+    }
+
+    private async Task DeleteList(Guid listId)
+    {
+        // Implement delete functionality
+        var list = userLists.FirstOrDefault(l => l.Id == listId);
+        if (list != null)
+        {
+            context.UserLists.Remove(list);
+            await context.SaveChangesAsync();
+            await LoadUserLists();
+        }
     }
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();

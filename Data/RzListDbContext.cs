@@ -10,5 +10,6 @@ namespace Data
         public DbSet<Book> Books { get; set; }
         public override DbSet<User> Users { get; set; }
         public DbSet<UserBook> UserBooks { get; set; }
+        public DbSet<UserList> UserLists { get; set; }
     }
 }

@@ -1,0 +1,88 @@
+@page "/userlists/create"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.EntityFrameworkCore
+@using Models.Entities
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+@using rz_list.Components.Account
+@inject IDbContextFactory<Data.RzListDbContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject IdentityUserAccessor UserAccessor
+@inject IHttpContextAccessor HttpContextAccessor
+
+@attribute [Authorize]
+
+<PageTitle>Create List</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true" Class="mb-4">Create New List</MudText>
+
+    <EditForm Model="@UserList" OnValidSubmit="OnValidSubmit" Class="mb-4">
+        <DataAnnotationsValidator />
+        <MudCard>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="8" md="6">
+                        <MudTextField Label="List Name"
+                            HelperText="@GetHelperText(nameof(UserList.Name), "Name for your reading list")"
+                            @bind-Value="UserList.Name" For="@(() => UserList.Name)" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                    Class="ml-auto">Create List</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </EditForm>
+
+    @if (error)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            An error occurred while creating the list. Please try again.
+        </MudAlert>
+    }
+
+    <MudLink Href="/userlists" Class="mt-4">Back to My Lists</MudLink>
+</MudContainer>
+
+@code {
+    private UserList UserList { get; set; } = new();
+    bool error = false;
+
+    private string GetHelperText(string propertyName, string baseText)
+    {
+        var property = typeof(UserList).GetProperty(propertyName);
+        var isRequired = property?.GetCustomAttribute<RequiredAttribute>() != null;
+
+        return isRequired ? $"{baseText} (required)" : baseText;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            using var dbContext = DbFactory.CreateDbContext();
+
+            // Get the current user
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var currentUser = await UserAccessor.GetRequiredUserAsync(httpContext);
+                UserList.UserId = currentUser.Id;
+            }
+
+            dbContext.UserLists.Add(UserList);
+            await dbContext.SaveChangesAsync();
+            error = false;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/userlists");
+        }
+        catch (Exception)
+        {
+            error = true;
+            StateHasChanged();
+        }
+    }
+}
