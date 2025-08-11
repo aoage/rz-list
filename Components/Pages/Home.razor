@@ -2,8 +2,13 @@
 @using Microsoft.EntityFrameworkCore
 @using Models.Entities
 @using Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using rz_list.Components.Account
 @inject IDbContextFactory<Data.RzListDbContext> DbFactory
 @inject IJSRuntime JSRuntime
+@inject IdentityUserAccessor UserAccessor
+@inject IHttpContextAccessor HttpContextAccessor
 @implements IAsyncDisposable
 
 <PageTitle>Home - RZ List</PageTitle>
@@ -48,7 +53,8 @@
                                 <MudItem xs="12" sm="6" md="4" lg="3">
                                     <MudCard Class="cursor-pointer h-100" Elevation="2" Style="transition: transform 0.2s ease-in-out;"
                                         onmouseover="this.style.transform='translateY(-4px)'"
-                                        onmouseout="this.style.transform='translateY(0)'">
+                                        onmouseout="this.style.transform='translateY(0)'"
+                                        @onclick="() => OpenBookModal(book)">
                                         <MudCardMedia Image="@GetBookCoverImage(book)" Height="200"
                                             Style="background-color: #f5f5f5;" />
                                         <MudCardContent>
@@ -134,7 +140,7 @@
                 @foreach (var book in recentBooks.Take(4))
                 {
                     <MudItem xs="12" sm="6" md="3">
-                        <MudCard Class="cursor-pointer h-100" Elevation="2">
+                        <MudCard Class="cursor-pointer h-100" Elevation="2" @onclick="() => OpenBookModal(book)">
                             <MudCardMedia Image="@GetBookCoverImage(book)" Height="200" Style="background-color: #f5f5f5;" />
                             <MudCardContent>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight: 500;">
@@ -210,7 +216,7 @@
                 @foreach (var book in selectedPublisherBooks)
                 {
                     <MudItem xs="12" sm="6" md="4">
-                        <MudCard Class="h-100">
+                        <MudCard Class="h-100 cursor-pointer" @onclick="() => OpenBookModal(book)">
                             <MudCardMedia Image="@GetBookCoverImage(book)" Height="150" Style="background-color: #f5f5f5;" />
                             <MudCardContent>
                                 <MudText Typo="Typo.subtitle2">@book.Title</MudText>
@@ -227,6 +233,114 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="ClosePublisherDialog">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Book Details & Add to List Modal -->
+<MudDialog @bind-Visible="showBookModal" MaxWidth="MaxWidth.Medium">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Add "@selectedBookForModal?.Title" to Reading List
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (selectedBookForModal != null)
+        {
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudImage Src="@GetBookCoverImage(selectedBookForModal)" Alt="@selectedBookForModal.Title"
+                        Style="width: 100%; max-width: 200px; height: auto;" />
+                </MudItem>
+                <MudItem xs="12" md="8">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@selectedBookForModal.Title</MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">by @selectedBookForModal.Author</MudText>
+                    @if (!string.IsNullOrEmpty(selectedBookForModal.Publisher))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Tertiary" Class="mt-1">
+                            Publisher: @selectedBookForModal.Publisher
+                        </MudText>
+                    }
+                    @if (selectedBookForModal.PublishedDate.HasValue)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Tertiary">
+                            Published: @selectedBookForModal.PublishedDate.Value.Year
+                        </MudText>
+                    }
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="mt-2">
+                        @selectedBookForModal.Genre.ToDisplayString()
+                    </MudChip>
+                    @if (!string.IsNullOrEmpty(selectedBookForModal.Description))
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-3">
+                            @selectedBookForModal.Description
+                        </MudText>
+                    }
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            @if (currentUser != null)
+            {
+                <MudText Typo="Typo.h6" GutterBottom="true">Select a Reading List:</MudText>
+                
+                @if (userLists.Any())
+                {
+                    <MudSelect T="UserList" @bind-Value="selectedUserList" Label="Choose Reading List"
+                               Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                        @foreach (var list in userLists)
+                        {
+                            <MudSelectItem Value="@list">@list.Name (@list.UserBooks.Count books)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    
+                    @if (addToListError)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-2">
+                            @addToListErrorMessage
+                        </MudAlert>
+                    }
+                    
+                    @if (addToListSuccess)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-2">
+                            Book successfully added to @selectedUserList?.Name!
+                        </MudAlert>
+                    }
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">
+                        You don't have any reading lists yet. 
+                        <MudLink Href="/userlists/create">Create one here</MudLink>.
+                    </MudAlert>
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning">
+                    You need to be logged in to add books to your reading lists.
+                </MudAlert>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        @if (currentUser != null && userLists.Any() && selectedUserList != null)
+        {
+            <MudButton OnClick="AddBookToSelectedList" Variant="Variant.Filled" Color="Color.Primary"
+                       Disabled="addingToList">
+                @if (addingToList)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <span class="ml-2">Adding...</span>
+                }
+                else
+                {
+                    <span>Add to List</span>
+                }
+            </MudButton>
+        }
+        <MudButton OnClick="CloseBookModal">Close</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -278,6 +392,17 @@
     private string selectedPublisher = string.Empty;
     private bool showPublisherDialog = false;
 
+    // Book modal variables
+    private bool showBookModal = false;
+    private Book? selectedBookForModal = null;
+    private List<UserList> userLists = new();
+    private UserList? selectedUserList = null;
+    private User? currentUser = null;
+    private bool addingToList = false;
+    private bool addToListError = false;
+    private bool addToListSuccess = false;
+    private string addToListErrorMessage = string.Empty;
+
     private int totalBooks = 0;
     private int uniqueGenres = 0;
     private int uniquePublishers = 0;
@@ -291,6 +416,7 @@
     {
         context = DbFactory.CreateDbContext();
         await LoadData();
+        await LoadCurrentUser();
         // Start auto-rotation for featured publishers
         StartAutoRotation();
     }
@@ -304,15 +430,6 @@
             allBooks = await context.Books
             .OrderBy(b => b.DateAdded)
             .ToListAsync();
-
-            if (!allBooks.Any())
-            {
-                // If no books exist, create some sample data
-                await CreateSampleData();
-                allBooks = await context.Books
-                .OrderBy(b => b.DateAdded)
-                .ToListAsync();
-            }
 
             // Group books by genre (only genres with books)
             booksByGenre = allBooks
@@ -357,208 +474,6 @@
         {
             loading = false;
         }
-    }
-
-    private async Task CreateSampleData()
-    {
-        var sampleBooks = new List<Book>
-{
-// Classic Literature
-new Book { Title = "The Great Gatsby", Author = "F. Scott Fitzgerald", Publisher = "Scribner", Genre = Genre.Classic,
-Description = "A classic American novel set in the Jazz Age.", PublishedDate = new DateTime(1925, 4, 10), CoverImageUrl
-= "https://covers.openlibrary.org/b/isbn/9780743273565-L.jpg" },
-new Book { Title = "To Kill a Mockingbird", Author = "Harper Lee", Publisher = "J.B. Lippincott & Co.", Genre =
-Genre.Fiction, Description = "A gripping tale of racial injustice and childhood innocence.", PublishedDate = new
-DateTime(1960, 7, 11), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780061120084-L.jpg" },
-new Book { Title = "Pride and Prejudice", Author = "Jane Austen", Publisher = "T. Egerton", Genre = Genre.Romance,
-Description = "A romantic novel of manners.", PublishedDate = new DateTime(1813, 1, 28), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780141439518-L.jpg" },
-new Book { Title = "The Catcher in the Rye", Author = "J.D. Salinger", Publisher = "Little, Brown and Company", Genre =
-Genre.Classic, Description = "A controversial novel about teenage rebellion.", PublishedDate = new DateTime(1951, 7,
-16), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780316769174-L.jpg" },
-new Book { Title = "Wuthering Heights", Author = "Emily Brontë", Publisher = "Thomas Cautley Newby", Genre =
-Genre.Classic, Description = "A dark tale of passion and revenge.", PublishedDate = new DateTime(1847, 12, 1),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780141439556-L.jpg" },
-new Book { Title = "Jane Eyre", Author = "Charlotte Brontë", Publisher = "Smith, Elder & Co.", Genre = Genre.Classic,
-Description = "The story of an orphaned girl who becomes a governess.", PublishedDate = new DateTime(1847, 10, 16),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780141441146-L.jpg" },
-
-// Science Fiction
-new Book { Title = "1984", Author = "George Orwell", Publisher = "Secker & Warburg", Genre = Genre.ScienceFiction,
-Description = "A dystopian social science fiction novel.", PublishedDate = new DateTime(1949, 6, 8), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg" },
-new Book { Title = "Dune", Author = "Frank Herbert", Publisher = "Chilton Books", Genre = Genre.ScienceFiction,
-Description = "A science fiction novel set in the distant future.", PublishedDate = new DateTime(1965, 8, 1),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780441172719-L.jpg" },
-new Book { Title = "Foundation", Author = "Isaac Asimov", Publisher = "Gnome Press", Genre = Genre.ScienceFiction,
-Description = "The first novel in the Foundation series.", PublishedDate = new DateTime(1951, 5, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780553293357-L.jpg" },
-new Book { Title = "Neuromancer", Author = "William Gibson", Publisher = "Ace Books", Genre = Genre.ScienceFiction,
-Description = "A seminal cyberpunk novel.", PublishedDate = new DateTime(1984, 7, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780441569595-L.jpg" },
-new Book { Title = "The Hitchhiker's Guide to the Galaxy", Author = "Douglas Adams", Publisher = "Pan Books", Genre =
-Genre.ScienceFiction, Description = "A comedy science fiction series.", PublishedDate = new DateTime(1979, 10, 12),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780345391803-L.jpg" },
-new Book { Title = "Ender's Game", Author = "Orson Scott Card", Publisher = "Tor Books", Genre = Genre.ScienceFiction,
-Description = "A military science fiction novel.", PublishedDate = new DateTime(1985, 8, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780812550702-L.jpg" },
-
-// Fantasy
-new Book { Title = "The Lord of the Rings", Author = "J.R.R. Tolkien", Publisher = "Allen & Unwin", Genre =
-Genre.Fantasy, Description = "An epic high fantasy novel.", PublishedDate = new DateTime(1954, 7, 29), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780618640157-L.jpg" },
-new Book { Title = "The Hobbit", Author = "J.R.R. Tolkien", Publisher = "Allen & Unwin", Genre = Genre.Fantasy,
-Description = "A children's fantasy novel and prelude to The Lord of the Rings.", PublishedDate = new DateTime(1937, 9,
-21), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780547928227-L.jpg" },
-new Book { Title = "Harry Potter and the Philosopher's Stone", Author = "J.K. Rowling", Publisher = "Bloomsbury", Genre
-= Genre.Fantasy, Description = "The first novel in the Harry Potter series.", PublishedDate = new DateTime(1997, 6, 26),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780747532699-L.jpg" },
-new Book { Title = "A Game of Thrones", Author = "George R.R. Martin", Publisher = "Bantam Spectra", Genre =
-Genre.Fantasy, Description = "The first book in A Song of Ice and Fire series.", PublishedDate = new DateTime(1996, 8,
-1), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780553103540-L.jpg" },
-new Book { Title = "The Name of the Wind", Author = "Patrick Rothfuss", Publisher = "DAW Books", Genre = Genre.Fantasy,
-Description = "The first book in The Kingkiller Chronicle.", PublishedDate = new DateTime(2007, 3, 27), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780756404079-L.jpg" },
-new Book { Title = "The Way of Kings", Author = "Brandon Sanderson", Publisher = "Tor Books", Genre = Genre.Fantasy,
-Description = "The first book in The Stormlight Archive.", PublishedDate = new DateTime(2010, 8, 31), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780765326355-L.jpg" },
-
-// Mystery & Thriller
-new Book { Title = "The Da Vinci Code", Author = "Dan Brown", Publisher = "Doubleday", Genre = Genre.Mystery,
-Description = "A mystery thriller novel.", PublishedDate = new DateTime(2003, 3, 18), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780385504201-L.jpg" },
-new Book { Title = "The Girl with the Dragon Tattoo", Author = "Stieg Larsson", Publisher = "Norstedts Förlag", Genre =
-Genre.Thriller, Description = "A psychological crime thriller.", PublishedDate = new DateTime(2005, 8, 1), CoverImageUrl
-= "https://covers.openlibrary.org/b/isbn/9780307269751-L.jpg" },
-new Book { Title = "Gone Girl", Author = "Gillian Flynn", Publisher = "Crown Publishing Group", Genre = Genre.Thriller,
-Description = "A psychological thriller about a marriage gone wrong.", PublishedDate = new DateTime(2012, 6, 5),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780307588364-L.jpg" },
-new Book { Title = "The Big Sleep", Author = "Raymond Chandler", Publisher = "Knopf", Genre = Genre.Mystery, Description
-= "A hardboiled detective novel.", PublishedDate = new DateTime(1939, 2, 6), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780394758282-L.jpg" },
-new Book { Title = "And Then There Were None", Author = "Agatha Christie", Publisher = "Collins Crime Club", Genre =
-Genre.Mystery, Description = "A mystery novel by the queen of crime.", PublishedDate = new DateTime(1939, 11, 6),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780062073488-L.jpg" },
-new Book { Title = "The Silence of the Lambs", Author = "Thomas Harris", Publisher = "St. Martin's Press", Genre =
-Genre.Thriller, Description = "A psychological horror thriller.", PublishedDate = new DateTime(1988, 5, 1),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780312022822-L.jpg" },
-
-// Horror
-new Book { Title = "The Shining", Author = "Stephen King", Publisher = "Doubleday", Genre = Genre.Horror, Description =
-"A horror novel about a haunted hotel.", PublishedDate = new DateTime(1977, 1, 28), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780385121675-L.jpg" },
-new Book { Title = "Dracula", Author = "Bram Stoker", Publisher = "Archibald Constable and Company", Genre =
-Genre.Horror, Description = "The classic vampire novel.", PublishedDate = new DateTime(1897, 5, 26), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780486411095-L.jpg" },
-new Book { Title = "Frankenstein", Author = "Mary Shelley", Publisher = "Lackington, Hughes, Harding, Mavor & Jones",
-Genre = Genre.Horror, Description = "The modern Prometheus.", PublishedDate = new DateTime(1818, 1, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780486282114-L.jpg" },
-new Book { Title = "The Exorcist", Author = "William Peter Blatty", Publisher = "Harper & Row", Genre = Genre.Horror,
-Description = "A supernatural horror novel.", PublishedDate = new DateTime(1971, 5, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780060522971-L.jpg" },
-
-// Young Adult
-new Book { Title = "The Hunger Games", Author = "Suzanne Collins", Publisher = "Scholastic", Genre = Genre.YoungAdult,
-Description = "A dystopian novel about a televised fight to the death.", PublishedDate = new DateTime(2008, 9, 14),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780439023481-L.jpg" },
-new Book { Title = "Divergent", Author = "Veronica Roth", Publisher = "Katherine Tegen Books", Genre = Genre.YoungAdult,
-Description = "A dystopian novel set in post-apocalyptic Chicago.", PublishedDate = new DateTime(2011, 4, 25),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780062024022-L.jpg" },
-new Book { Title = "The Fault in Our Stars", Author = "John Green", Publisher = "Dutton Books", Genre =
-Genre.YoungAdult, Description = "A romantic tragedy about two cancer patients.", PublishedDate = new DateTime(2012, 1,
-10), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780525478812-L.jpg" },
-new Book { Title = "Percy Jackson: The Lightning Thief", Author = "Rick Riordan", Publisher = "Miramax Books", Genre =
-Genre.YoungAdult, Description = "Modern mythology adventure.", PublishedDate = new DateTime(2005, 6, 28), CoverImageUrl
-= "https://covers.openlibrary.org/b/isbn/9780786838653-L.jpg" },
-
-// Non-Fiction & Biography
-new Book { Title = "Becoming", Author = "Michelle Obama", Publisher = "Crown Publishing Group", Genre = Genre.Biography,
-Description = "The memoir of former First Lady Michelle Obama.", PublishedDate = new DateTime(2018, 11, 13),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9781524763138-L.jpg" },
-new Book { Title = "Educated", Author = "Tara Westover", Publisher = "Random House", Genre = Genre.Biography,
-Description = "A memoir about education and family.", PublishedDate = new DateTime(2018, 2, 20), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780399590504-L.jpg" },
-new Book { Title = "Steve Jobs", Author = "Walter Isaacson", Publisher = "Simon & Schuster", Genre = Genre.Biography,
-Description = "The authorized biography of Steve Jobs.", PublishedDate = new DateTime(2011, 10, 24), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9781451648539-L.jpg" },
-new Book { Title = "Sapiens", Author = "Yuval Noah Harari", Publisher = "Harvill Secker", Genre = Genre.NonFiction,
-Description = "A brief history of humankind.", PublishedDate = new DateTime(2011, 9, 4), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780062316097-L.jpg" },
-new Book { Title = "The Immortal Life of Henrietta Lacks", Author = "Rebecca Skloot", Publisher = "Crown Publishers",
-Genre = Genre.NonFiction, Description = "Science, ethics, and the story of HeLa cells.", PublishedDate = new
-DateTime(2010, 2, 2), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9781400052172-L.jpg" },
-
-// Romance
-new Book { Title = "Outlander", Author = "Diana Gabaldon", Publisher = "Delacorte Press", Genre = Genre.Romance,
-Description = "Time-traveling historical romance.", PublishedDate = new DateTime(1991, 8, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780440212560-L.jpg" },
-new Book { Title = "The Notebook", Author = "Nicholas Sparks", Publisher = "Warner Books", Genre = Genre.Romance,
-Description = "A love story that spans decades.", PublishedDate = new DateTime(1996, 10, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780446520805-L.jpg" },
-new Book { Title = "Me Before You", Author = "Jojo Moyes", Publisher = "Pamela Dorman Books", Genre = Genre.Romance,
-Description = "An emotional contemporary romance.", PublishedDate = new DateTime(2012, 1, 5), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780670026609-L.jpg" },
-
-// Self-Help & Business
-new Book { Title = "Atomic Habits", Author = "James Clear", Publisher = "Avery", Genre = Genre.SelfHelp, Description =
-"An easy and proven way to build good habits.", PublishedDate = new DateTime(2018, 10, 16), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg" },
-new Book { Title = "The 7 Habits of Highly Effective People", Author = "Stephen Covey", Publisher = "Free Press", Genre
-= Genre.SelfHelp, Description = "Powerful lessons in personal change.", PublishedDate = new DateTime(1989, 8, 15),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780743269513-L.jpg" },
-new Book { Title = "Think and Grow Rich", Author = "Napoleon Hill", Publisher = "The Ralston Society", Genre =
-Genre.Business, Description = "The classic guide to wealth and success.", PublishedDate = new DateTime(1937, 8, 1),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9781585424331-L.jpg" },
-new Book { Title = "Good to Great", Author = "Jim Collins", Publisher = "HarperBusiness", Genre = Genre.Business,
-Description = "Why some companies make the leap and others don't.", PublishedDate = new DateTime(2001, 10, 16),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780066620992-L.jpg" },
-
-// Philosophy & Psychology
-new Book { Title = "Man's Search for Meaning", Author = "Viktor E. Frankl", Publisher = "Beacon Press", Genre =
-Genre.Philosophy, Description = "A Holocaust survivor's guide to finding purpose.", PublishedDate = new DateTime(1946,
-1, 1), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780807014295-L.jpg" },
-new Book { Title = "Thinking, Fast and Slow", Author = "Daniel Kahneman", Publisher = "Farrar, Straus and Giroux", Genre
-= Genre.Psychology, Description = "How we make decisions and judgments.", PublishedDate = new DateTime(2011, 10, 25),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780374275631-L.jpg" },
-new Book { Title = "The Republic", Author = "Plato", Publisher = "Ancient Philosophy", Genre = Genre.Philosophy,
-Description = "A Socratic dialogue on justice and the ideal state.", PublishedDate = new DateTime(1, 1, 1),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780140455113-L.jpg" },
-
-// Children's Books
-new Book { Title = "Where the Wild Things Are", Author = "Maurice Sendak", Publisher = "Harper & Row", Genre =
-Genre.Children, Description = "A children's picture book about imagination.", PublishedDate = new DateTime(1963, 4, 9),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780060254926-L.jpg" },
-new Book { Title = "The Very Hungry Caterpillar", Author = "Eric Carle", Publisher = "World Publishing Company", Genre =
-Genre.Children, Description = "A classic children's book about growth and change.", PublishedDate = new DateTime(1969,
-6, 3), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780399226908-L.jpg" },
-new Book { Title = "Charlotte's Web", Author = "E.B. White", Publisher = "Harper & Brothers", Genre = Genre.Children,
-Description = "A story of friendship between a pig and a spider.", PublishedDate = new DateTime(1952, 10, 15),
-CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9780064400558-L.jpg" },
-
-// Adventure & Contemporary
-new Book { Title = "Into the Wild", Author = "Jon Krakauer", Publisher = "Villard", Genre = Genre.Adventure, Description
-= "The true story of Christopher McCandless.", PublishedDate = new DateTime(1996, 1, 13), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780385486804-L.jpg" },
-new Book { Title = "Life of Pi", Author = "Yann Martel", Publisher = "Knopf Canada", Genre = Genre.Adventure,
-Description = "A boy, a tiger, and survival at sea.", PublishedDate = new DateTime(2001, 9, 11), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780151008117-L.jpg" },
-new Book { Title = "The Kite Runner", Author = "Khaled Hosseini", Publisher = "Riverhead Books", Genre =
-Genre.Contemporary, Description = "A story of friendship and redemption in Afghanistan.", PublishedDate = new
-DateTime(2003, 5, 29), CoverImageUrl = "https://covers.openlibrary.org/b/isbn/9781573222457-L.jpg" },
-new Book { Title = "The Book Thief", Author = "Markus Zusak", Publisher = "Picador", Genre = Genre.Contemporary,
-Description = "A story narrated by Death during WWII.", PublishedDate = new DateTime(2005, 9, 1), CoverImageUrl =
-"https://covers.openlibrary.org/b/isbn/9780375831003-L.jpg" }
-};
-
-        // Add random DateAdded times over the past year to make the "recent books" section more interesting
-        var random = new Random();
-        foreach (var book in sampleBooks)
-        {
-            book.DateAdded = DateTime.UtcNow.AddDays(-random.Next(0, 365));
-        }
-
-        context.Books.AddRange(sampleBooks);
-        await context.SaveChangesAsync();
     }
 
     private string GetBookCoverImage(Book book)
@@ -618,6 +533,117 @@ Description = "A story narrated by Death during WWII.", PublishedDate = new Date
                 await InvokeAsync(StateHasChanged);
             }
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null && httpContext.User.Identity?.IsAuthenticated == true)
+            {
+                currentUser = await UserAccessor.GetRequiredUserAsync(httpContext);
+                await LoadUserLists();
+            }
+        }
+        catch
+        {
+            // User not authenticated or error getting user - that's okay for the home page
+            currentUser = null;
+        }
+    }
+
+    private async Task LoadUserLists()
+    {
+        if (currentUser == null) return;
+
+        try
+        {
+            userLists = await context.UserLists
+                .Include(ul => ul.UserBooks)
+                .Where(ul => ul.UserId == currentUser.Id)
+                .ToListAsync();
+        }
+        catch
+        {
+            userLists = new List<UserList>();
+        }
+    }
+
+    private void OpenBookModal(Book book)
+    {
+        selectedBookForModal = book;
+        selectedUserList = null;
+        addToListError = false;
+        addToListSuccess = false;
+        addToListErrorMessage = string.Empty;
+        showBookModal = true;
+    }
+
+    private void CloseBookModal()
+    {
+        showBookModal = false;
+        selectedBookForModal = null;
+        selectedUserList = null;
+        addToListError = false;
+        addToListSuccess = false;
+        addToListErrorMessage = string.Empty;
+    }
+
+    private async Task AddBookToSelectedList()
+    {
+        if (selectedBookForModal == null || selectedUserList == null || currentUser == null)
+            return;
+
+        addingToList = true;
+        addToListError = false;
+        addToListSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            // Check if book is already in this specific list
+            var existingUserBook = await context.UserBooks
+                .FirstOrDefaultAsync(ub => ub.UserId == currentUser.Id &&
+                                         ub.BookId == selectedBookForModal.Id &&
+                                         ub.UserListId == selectedUserList.Id);
+
+            if (existingUserBook == null)
+            {
+                // Create new UserBook entry for this specific list
+                var userBook = new UserBook
+                {
+                    UserId = currentUser.Id,
+                    BookId = selectedBookForModal.Id,
+                    UserListId = selectedUserList.Id,
+                    Status = ReadingStatus.WantToRead,
+                    DateAdded = DateTime.UtcNow
+                };
+
+                context.UserBooks.Add(userBook);
+                await context.SaveChangesAsync();
+
+                addToListSuccess = true;
+                
+                // Reload user lists to update counts
+                await LoadUserLists();
+            }
+            else
+            {
+                addToListError = true;
+                addToListErrorMessage = "This book is already in the selected list.";
+            }
+        }
+        catch (Exception)
+        {
+            addToListError = true;
+            addToListErrorMessage = "An error occurred while adding the book to your list. Please try again.";
+        }
+        finally
+        {
+            addingToList = false;
+            StateHasChanged();
+        }
     }
 
     public async ValueTask DisposeAsync()
