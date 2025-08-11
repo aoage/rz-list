@@ -22,7 +22,7 @@
                             @bind-Value="UserBook.UserId" For="@(() => UserBook.UserId)" Required="true">
                             @foreach (var user in Users)
                             {
-                                <MudSelectItem Value="@user.Id">@user.Username (@user.Email)</MudSelectItem>
+                                <MudSelectItem Value="@user.Id">@user.UserName (@user.Email)</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
@@ -116,7 +116,7 @@
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        Users = await context.Users.OrderBy(u => u.Username).ToListAsync();
+        Users = await context.Users.OrderBy(u => u.UserName).ToListAsync();
         Books = await context.Books.OrderBy(b => b.Title).ToListAsync();
     }
 

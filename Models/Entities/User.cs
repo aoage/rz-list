@@ -1,19 +1,10 @@
-using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace Models.Entities
 {
-    public class User
+    public class User : IdentityUser<Guid>
     {
-        public Guid Id { get; set; } = Guid.CreateVersion7();
-
-        [Required]
-        [StringLength(255)]
-        public string Username { get; set; } = string.Empty;
-
-        [Required]
-        [EmailAddress]
-        [StringLength(255)]
-        public string Email { get; set; } = string.Empty;
+        public override Guid Id { get; set; } = Guid.CreateVersion7();
 
         public DateTime DateCreated { get; set; }
 

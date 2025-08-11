@@ -19,7 +19,7 @@
     <MudDataGrid T="User" Items="@context.Users" Filterable="true" SortMode="SortMode.Multiple" Dense="true"
         Hover="true" ReadOnly="true">
         <Columns>
-            <PropertyColumn Property="x => x.Username" Title="Username" />
+            <PropertyColumn Property="x => x.UserName" Title="Username" />
             <PropertyColumn Property="x => x.Email" Title="Email" />
             <PropertyColumn Property="x => x.DateCreated" Title="Date Created" />
             <PropertyColumn Property="x => x.Permissions" Title="Permissions" />

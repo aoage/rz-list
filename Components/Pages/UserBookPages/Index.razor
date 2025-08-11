@@ -22,7 +22,7 @@
             <TemplateColumn Title="Username" Sortable="true" Filterable="true">
                 <CellTemplate>
                     <MudLink Href="@($"users/details?id={context.Item.UserId}")">
-                        @context.Item.User.Username
+                        @context.Item.User.UserName
                     </MudLink>
                 </CellTemplate>
             </TemplateColumn>
@@ -76,7 +76,7 @@
         FilteredUserBooks = await context.UserBooks
         .Include(ub => ub.User)
         .Include(ub => ub.Book)
-        .OrderBy(ub => ub.User.Username)
+        .OrderBy(ub => ub.User.UserName)
         .ThenBy(ub => ub.Book.Title)
         .ToListAsync();
     }

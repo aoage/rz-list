@@ -24,8 +24,8 @@
                 <MudCardContent>
                     <MudGrid>
                         <MudItem xs="12" sm="6" md="4" lg="3">
-                            <MudTextField Label="Username" HelperText="@GetHelperText(nameof(User.Username), "User's login name")"
-                                @bind-Value="User.Username" For="@(() => User.Username)" />
+                            <MudTextField Label="Username" HelperText="@GetHelperText(nameof(User.UserName), "User's login name")"
+                                @bind-Value="User.UserName" For="@(() => User.UserName)" />
                         </MudItem>
                         <MudItem xs="12" sm="6" md="4" lg="3">
                             <MudTextField Label="Email" HelperText="@GetHelperText(nameof(User.Email), "User's email address")"
