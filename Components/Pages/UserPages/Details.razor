@@ -1,8 +1,11 @@
 @page "/users/details"
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Models.Entities
 @inject IDbContextFactory<Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
+
+@attribute [Authorize(Policy = "RequireUserModerator")]
 
 <PageTitle>Details</PageTitle>
 

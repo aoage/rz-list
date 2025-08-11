@@ -14,10 +14,14 @@
             <MudNavLink Href="books" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Book">Books</MudNavLink>
         </Authorized>
     </AuthorizeView>
-    <AuthorizeView>
+    <AuthorizeView Policy="RequireUserModerator">
         <Authorized>
             <MudNavLink Href="userbooks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">UserBooks
             </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView>
+        <Authorized>
             <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">
                 @context.User.Identity?.Name</MudNavLink>
             <form action="Account/Logout" method="post">

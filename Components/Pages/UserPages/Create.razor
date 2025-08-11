@@ -1,4 +1,5 @@
 @page "/users/create"
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Models.Entities
 @using System.ComponentModel.DataAnnotations
@@ -6,6 +7,8 @@
 @inject IDbContextFactory<Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
 @inject ILogger<Create> Logger
+
+@attribute [Authorize(Policy = "RequireUserModerator")]
 
 <PageTitle>Create</PageTitle>
 
