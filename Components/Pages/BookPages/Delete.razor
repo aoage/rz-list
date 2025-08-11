@@ -40,21 +40,12 @@
                         <MudNumericField Label="Character Count" @bind-Value="book.CharacterCount" ReadOnly="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudTextField Label="Genre" @bind-Value="book.Genre" ReadOnly="true" />
+                        <MudTextField Label="Genre" Value="@book.Genre.ToDisplayString()" ReadOnly="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4" lg="3">
                         <MudTextField Label="Publisher" @bind-Value="book.Publisher" ReadOnly="true" />
                     </MudItem>
-                    <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudTextField Label="Character Count" @bind-Value="book.CharacterCount" ReadOnly="true" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudTextField Label="Genre" @bind-Value="book.Genre" ReadOnly="true" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudTextField Label="Publisher" @bind-Value="book.Publisher" ReadOnly="true" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudItem xs="12">
                         <MudTextField Label="Cover Image URL" @bind-Value="book.CoverImageUrl" ReadOnly="true" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4" lg="3">

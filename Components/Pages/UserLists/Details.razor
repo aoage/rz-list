@@ -42,11 +42,8 @@
                         <div style="display: flex; flex-direction: column; padding: 8px 0;">
                             <MudText Typo="Typo.body1" Style="font-weight: 500;">@book.Title</MudText>
                             <MudText Typo="Typo.body2" Color="Color.Secondary">by @book.Author</MudText>
-                            @if (!string.IsNullOrEmpty(book.Genre))
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Primary"
-                                    Style="margin-top: 4px; width: fit-content;">@book.Genre</MudChip>
-                            }
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary"
+                                Style="margin-top: 4px; width: fit-content;">@book.Genre.ToDisplayString()</MudChip>
                             @if (book.PublishedDate.HasValue)
                             {
                                 <MudText Typo="Typo.caption" Color="Color.Tertiary">Published: @book.PublishedDate.Value.Year
@@ -89,10 +86,7 @@
                                 <MudText Typo="Typo.body2" Class="mt-2">@selectedBook.Description</MudText>
                             }
                             <div class="d-flex gap-2 mt-2">
-                                @if (!string.IsNullOrEmpty(selectedBook.Genre))
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@selectedBook.Genre</MudChip>
-                                }
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@selectedBook.Genre.ToDisplayString()</MudChip>
                                 @if (selectedBook.PublishedDate.HasValue)
                                 {
                                     <MudChip T="string" Size="Size.Small" Color="Color.Secondary">
@@ -158,7 +152,7 @@
                                 <MudCardContent>
                                     <MudText Typo="Typo.h6" Style="min-height: 48px; line-height: 1.2;">@userBook.Book.Title</MudText>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">by @userBook.Book.Author</MudText>
-                                    @if (!string.IsNullOrEmpty(userBook.Book.Genre))
+                                    @if (!string.IsNullOrEmpty(userBook.Book.Genre.ToDisplayString()))
                                     {
                                         <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Class="mt-2">@userBook.Book.Genre</MudChip>
                                     }
@@ -227,9 +221,9 @@
                         <MudTd DataLabel="Book">
                             <div>
                                 <MudText Typo="Typo.body1">@context.Book.Title</MudText>
-                                @if (!string.IsNullOrEmpty(context.Book.Genre))
+                                @if (!string.IsNullOrEmpty(context.Book.Genre.ToDisplayString()))
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@context.Book.Genre</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary">@context.Book.Genre.ToDisplayString()</MudChip>
                                 }
                             </div>
                         </MudTd>
@@ -329,6 +323,12 @@
         var searchTerm = value.ToLowerInvariant();
         var searchWords = searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+        // Pre-compute genre matches to avoid EF translation issues
+        var allGenres = Enum.GetValues<Genre>();
+        var matchingGenres = allGenres.Where(g => 
+            g.ToDisplayString().ToLowerInvariant().Contains(searchTerm) ||
+            g.ToString().ToLowerInvariant().Contains(searchTerm)).ToList();
+
         try
         {
             var books = await context.Books
@@ -337,8 +337,8 @@
             b.Title.ToLower().Contains(searchTerm) ||
             // Exact author match
             b.Author.ToLower().Contains(searchTerm) ||
-            // Genre match
-            (b.Genre != null && b.Genre.ToLower().Contains(searchTerm)) ||
+            // Genre match - using enum values directly
+            matchingGenres.Contains(b.Genre) ||
             // ISBN match
             (b.ISBN != null && b.ISBN.ToLower().Contains(searchTerm)) ||
             // Publisher match
@@ -347,7 +347,6 @@
             (searchWords.Length > 1 && searchWords.All(word =>
             b.Title.ToLower().Contains(word) ||
             b.Author.ToLower().Contains(word) ||
-            (b.Genre != null && b.Genre.ToLower().Contains(word)) ||
             (b.Description != null && b.Description.ToLower().Contains(word))
             ))
             )

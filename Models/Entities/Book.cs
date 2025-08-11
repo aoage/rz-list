@@ -24,8 +24,7 @@ namespace Models.Entities
 
         public long? CharacterCount { get; set; }
 
-        [StringLength(500)]
-        public string? Genre { get; set; }
+        public Genre Genre { get; set; } = Genre.Other;
 
         [StringLength(255)]
         public string? Publisher { get; set; }

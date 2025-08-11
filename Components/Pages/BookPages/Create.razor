@@ -48,9 +48,15 @@
                             @bind-Value="Book.CharacterCount" For="@(() => Book.CharacterCount)" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4" lg="3">
-                        <MudTextField Label="Genre"
+                        <MudAutocomplete T="Genre" Label="Genre" @bind-Value="Book.Genre" SearchFunc="@SearchGenres"
+                            ToStringFunc="@(genre => genre.ToDisplayString())"
                             HelperText="@GetHelperText(nameof(Book.Genre), "Book genre/category")"
-                            @bind-Value="Book.Genre" For="@(() => Book.Genre)" />
+                            ResetValueOnEmptyText="false" CoerceText="true" CoerceValue="true"
+                            For="@(() => Book.Genre)">
+                            <ItemTemplate Context="genre">
+                                <MudText>@genre.ToDisplayString()</MudText>
+                            </ItemTemplate>
+                        </MudAutocomplete>
                     </MudItem>
                     <MudItem xs="12" sm="6" md="4" lg="3">
                         <MudTextField Label="Publisher"
@@ -91,6 +97,17 @@
         var isRequired = property?.GetCustomAttribute<RequiredAttribute>() != null;
 
         return isRequired ? $"{baseText} (required)" : baseText;
+    }
+
+    private async Task<IEnumerable<Genre>> SearchGenres(string value, CancellationToken cancellationToken)
+    {
+        var allGenres = Enum.GetValues<Genre>().AsEnumerable();
+
+        if (string.IsNullOrWhiteSpace(value))
+            return allGenres;
+
+        return await Task.FromResult(allGenres.Where(genre =>
+        genre.ToDisplayString().Contains(value, StringComparison.InvariantCultureIgnoreCase)));
     }
 
     private async Task OnValidSubmit(EditContext context)
