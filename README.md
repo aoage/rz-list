@@ -32,7 +32,7 @@ Run the app
 dotnet watch
 ```
 
-3. Open your browser and navigate to `http://localhost:5040/` (or the URL shown in the console)
+Open your browser and navigate to `http://localhost:5040/` (or the URL shown in the console)
 
 ## License
 
