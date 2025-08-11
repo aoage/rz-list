@@ -6,45 +6,61 @@
 
 <PageTitle>Details</PageTitle>
 
-<h1>Details</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Book Details</MudText>
 
-<div>
-    <h2>Book</h2>
-    <hr />
-    @if (book is null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else {
-        <dl class="row">
-            <dt class="col-sm-2">Title</dt>
-            <dd class="col-sm-10">@book.Title</dd>
-            <dt class="col-sm-2">Author</dt>
-            <dd class="col-sm-10">@book.Author</dd>
-            <dt class="col-sm-2">ISBN</dt>
-            <dd class="col-sm-10">@book.ISBN</dd>
-            <dt class="col-sm-2">PublishedDate</dt>
-            <dd class="col-sm-10">@book.PublishedDate</dd>
-            <dt class="col-sm-2">Description</dt>
-            <dd class="col-sm-10">@book.Description</dd>
-            <dt class="col-sm-2">CharacterCount</dt>
-            <dd class="col-sm-10">@book.CharacterCount</dd>
-            <dt class="col-sm-2">Genre</dt>
-            <dd class="col-sm-10">@book.Genre</dd>
-            <dt class="col-sm-2">Publisher</dt>
-            <dd class="col-sm-10">@book.Publisher</dd>
-            <dt class="col-sm-2">CoverImageUrl</dt>
-            <dd class="col-sm-10">@book.CoverImageUrl</dd>
-            <dt class="col-sm-2">DateAdded</dt>
-            <dd class="col-sm-10">@book.DateAdded</dd>
-        </dl>
-        <div>
-            <a href="@($"/books/edit?id={book.Id}")">Edit</a> |
-            <a href="@($"/books/delete?id={book.Id}")">Delete</a> |
-            <a href="@($"/books")">Back to List</a>
-        </div>
-    }
-</div>
+    <MudCard Class="mb-4">
+        <MudCardContent>
+            @if (book is null)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Title" @bind-Value="book.Title" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Author" @bind-Value="book.Author" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="ISBN" @bind-Value="book.ISBN" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudDatePicker Label="Published Date" @bind-Date="book.PublishedDate" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Label="Description" @bind-Value="book.Description" ReadOnly="true" Lines="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudNumericField Label="Character Count" @bind-Value="book.CharacterCount" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Genre" @bind-Value="book.Genre" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Publisher" @bind-Value="book.Publisher" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Label="Cover Image URL" @bind-Value="book.CoverImageUrl" ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(book is null)"
+                Href="@(book is not null ? $"/books/edit?id={book.Id}" : null)" Class="ml-auto">
+                Edit
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@(book is null)"
+                Href="@(book is not null ? $"/books/delete?id={book.Id}" : null)" Class="ml-2">
+                Delete
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudLink Href="/books" Class="mt-4">Back to List</MudLink>
+</MudContainer>
 
 @code {
     private Book? book;

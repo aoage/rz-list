@@ -1,88 +1,111 @@
 @page "/books/create"
 @using Microsoft.EntityFrameworkCore
 @using RzList.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
 @inject IDbContextFactory<RzList.Data.RzListDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create</PageTitle>
 
-<h1>Create</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Create New Book</MudText>
 
-<h2>Book</h2>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm method="post" Model="Book" OnValidSubmit="AddBook" FormName="create" Enhance>
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="mb-3">
-                <label for="title" class="form-label">Title: <span class="text-danger">*</span></label>
-                <InputText id="title" @bind-Value="Book.Title" class="form-control" aria-required="true" />
-                <ValidationMessage For="() => Book.Title" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="author" class="form-label">Author: <span class="text-danger">*</span></label>
-                <InputText id="author" @bind-Value="Book.Author" class="form-control" aria-required="true" />
-                <ValidationMessage For="() => Book.Author" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="isbn" class="form-label">ISBN:</label>
-                <InputText id="isbn" @bind-Value="Book.ISBN" class="form-control" />
-                <ValidationMessage For="() => Book.ISBN" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="publisheddate" class="form-label">Published Date:</label>
-                <input type="date" id="publisheddate" value="@(Book.PublishedDate?.ToString("yyyy-MM-dd") ?? "")"
-                    @onchange="@((e) => Book.PublishedDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value?.ToString() ?? string.Empty))"
-                    class="form-control" />
-                <ValidationMessage For="() => Book.PublishedDate" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description:</label>
-                <InputText id="description" @bind-Value="Book.Description" class="form-control" />
-                <ValidationMessage For="() => Book.Description" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="charactercount" class="form-label">Character Count:</label>
-                <input type="number" id="charactercount" value="@(Book.CharacterCount?.ToString() ?? "")"
-                    @onchange="@((e) => Book.CharacterCount = string.IsNullOrEmpty(e.Value?.ToString()) ? null : long.Parse(e.Value?.ToString() ?? ""))"
-                    class="form-control" />
-                <ValidationMessage For="() => Book.CharacterCount" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="genre" class="form-label">Genre:</label>
-                <InputText id="genre" @bind-Value="Book.Genre" class="form-control" />
-                <ValidationMessage For="() => Book.Genre" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="publisher" class="form-label">Publisher:</label>
-                <InputText id="publisher" @bind-Value="Book.Publisher" class="form-control" />
-                <ValidationMessage For="() => Book.Publisher" class="text-danger" />
-            </div>
-            <div class="mb-3">
-                <label for="coverimageurl" class="form-label">CoverImageUrl:</label>
-                <InputText id="coverimageurl" @bind-Value="Book.CoverImageUrl" class="form-control" />
-                <ValidationMessage For="() => Book.CoverImageUrl" class="text-danger" />
-            </div>
-            <button type="submit" class="btn btn-primary">Create</button>
-        </EditForm>
-    </div>
-</div>
+    <EditForm Model="@Book" OnValidSubmit="OnValidSubmit" Class="mb-4">
+        <DataAnnotationsValidator />
+        <MudCard>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Title" HelperText="@GetHelperText(nameof(Book.Title), "Book title")"
+                            @bind-Value="Book.Title" For="@(() => Book.Title)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Author" HelperText="@GetHelperText(nameof(Book.Author), "Author name")"
+                            @bind-Value="Book.Author" For="@(() => Book.Author)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="ISBN"
+                            HelperText="@GetHelperText(nameof(Book.ISBN), "International Standard Book Number")"
+                            @bind-Value="Book.ISBN" For="@(() => Book.ISBN)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudDatePicker Label="Published Date"
+                            HelperText="@GetHelperText(nameof(Book.PublishedDate), "When was the book published")"
+                            @bind-Date="Book.PublishedDate" For="@(() => Book.PublishedDate)" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Label="Description"
+                            HelperText="@GetHelperText(nameof(Book.Description), "Book description")"
+                            @bind-Value="Book.Description" For="@(() => Book.Description)" Lines="3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudNumericField Label="Character Count"
+                            HelperText="@GetHelperText(nameof(Book.CharacterCount), "Total number of characters")"
+                            @bind-Value="Book.CharacterCount" For="@(() => Book.CharacterCount)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Genre"
+                            HelperText="@GetHelperText(nameof(Book.Genre), "Book genre/category")"
+                            @bind-Value="Book.Genre" For="@(() => Book.Genre)" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudTextField Label="Publisher"
+                            HelperText="@GetHelperText(nameof(Book.Publisher), "Publishing company")"
+                            @bind-Value="Book.Publisher" For="@(() => Book.Publisher)" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Label="Cover Image URL"
+                            HelperText="@GetHelperText(nameof(Book.CoverImageUrl), "Link to book cover image")"
+                            @bind-Value="Book.CoverImageUrl" For="@(() => Book.CoverImageUrl)" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                    Class="ml-auto">Create Book</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </EditForm>
 
-<div>
-    <a href="/books">Back to List</a>
-</div>
+    @if (error)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            An error occurred while creating the book. Please try again.
+        </MudAlert>
+    }
+
+    <MudLink Href="/books" Class="mt-4">Back to List</MudLink>
+</MudContainer>
 
 @code {
-    [SupplyParameterFromForm]
     private Book Book { get; set; } = new();
+    bool error = false;
 
-    private async Task AddBook()
+    private string GetHelperText(string propertyName, string baseText)
     {
-        using var context = DbFactory.CreateDbContext();
-        Book.DateAdded = DateTime.UtcNow;
-        context.Books.Add(Book);
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/books");
+        var property = typeof(Book).GetProperty(propertyName);
+        var isRequired = property?.GetCustomAttribute<RequiredAttribute>() != null;
+
+        return isRequired ? $"{baseText} (required)" : baseText;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        try
+        {
+            using var dbContext = DbFactory.CreateDbContext();
+            Book.DateAdded = DateTime.UtcNow;
+            dbContext.Books.Add(Book);
+            await dbContext.SaveChangesAsync();
+            error = false;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/books");
+        }
+        catch (Exception)
+        {
+            error = true;
+            StateHasChanged();
+        }
     }
 }
